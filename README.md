@@ -34,12 +34,12 @@ Spec:
   s3ClassName
   claimPolicy: Delete / Retain
   claimRef:
-	apiVersion: v1
-	kind: PersistentVolumeClaim
-	name: redis-data-rediscentral-0
-	namespace: baly-ode-001
-	resourceVersion: "267741823"
-	uid: ff1eddc9-fb16-4762-ba43-f193ed23b92d  
+    apiVersion: v1
+    kind: PersistentVolumeClaim
+    name: redis-data-rediscentral-0
+    namespace: baly-ode-001
+    resourceVersion: "267741823"
+    uid: ff1eddc9-fb16-4762-ba43-f193ed23b92d  
   Quota:
     (max_buckets, max_size, max_objects)
   Status:
