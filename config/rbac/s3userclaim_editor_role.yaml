@@ -1,0 +1,31 @@
+# permissions for end users to edit s3userclaims.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  labels:
+    app.kubernetes.io/name: clusterrole
+    app.kubernetes.io/instance: s3userclaim-editor-role
+    app.kubernetes.io/component: rbac
+    app.kubernetes.io/created-by: s3-operator
+    app.kubernetes.io/part-of: s3-operator
+    app.kubernetes.io/managed-by: kustomize
+  name: s3userclaim-editor-role
+rules:
+- apiGroups:
+  - s3.snappcloud.io
+  resources:
+  - s3userclaims
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - s3.snappcloud.io
+  resources:
+  - s3userclaims/status
+  verbs:
+  - get
