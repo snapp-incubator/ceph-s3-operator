@@ -35,10 +35,14 @@ spec:
           spec:
             description: S3UserClaimSpec defines the desired state of S3UserClaim
             properties:
-              foo:
-                description: Foo is an example field of S3UserClaim. Edit s3userclaim_types.go
-                  to remove/update
+              adminSecret:
                 type: string
+              readOnlySecret:
+                type: string
+              s3ClassName:
+                type: string
+            required:
+            - adminSecret
             type: object
           status:
             description: S3UserClaimStatus defines the observed state of S3UserClaim

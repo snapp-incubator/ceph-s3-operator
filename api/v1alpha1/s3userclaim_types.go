@@ -28,8 +28,9 @@ type S3UserClaimSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of S3UserClaim. Edit s3userclaim_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	S3ClassName    string `json:"s3ClassName,omitempty"`
+	ReadOnlySecret string `json:"readOnlySecret,omitempty"`
+	AdminSecret    string `json:"adminSecret"`
 }
 
 // S3UserClaimStatus defines the observed state of S3UserClaim
