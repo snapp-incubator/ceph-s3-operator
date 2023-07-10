@@ -15,11 +15,11 @@ Kind: S3UserClaim
 metadata:
   name: myuser
   namespace: dispatching-test
-Spec:
-  s3ClassName (optional) have default value
-  readOnlySecret (optional)
-  adminSecret  (required)
-Status:
+spec:
+  s3ClassName: (optional) have default value
+  readOnlySecret: (optional)
+  adminSecret: (required)
+status:
   quota: (max_buckets, max_size, max_objects)
 ```
 
@@ -30,17 +30,16 @@ apiVersion: s3.snappcloud.io/v1alpha
 Kind: S3User
 metadata:
   name: myuser
-Spec:
-  s3ClassName
+spec:
+  s3ClassName:
   claimPolicy: Delete / Retain
   claimRef:
     apiVersion: v1
-    kind: PersistentVolumeClaim
-    name: redis-data-rediscentral-0
+    kind: S3UserClaim
+    name: myuser
     namespace: baly-ode-001
     resourceVersion: "267741823"
-    uid: ff1eddc9-fb16-4762-ba43-f193ed23b92d  
-  Quota:
-    (max_buckets, max_size, max_objects)
-  Status:
+    uid: ff1eddc9-fb16-4762-ba43-f193ed23b92d
+  quota: (max_buckets, max_size, max_objects)
+status:
 ```
