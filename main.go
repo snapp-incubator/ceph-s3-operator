@@ -18,6 +18,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"os"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
@@ -32,7 +33,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	s3v1alpha1 "github.com/snapp-incubator/s3-operator/api/v1alpha1"
-	"github.com/snapp-incubator/s3-operator/controllers"
+	"github.com/snapp-incubator/s3-operator/internal/config"
+	"github.com/snapp-incubator/s3-operator/internal/controllers/s3userclaim"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -49,19 +51,31 @@ func init() {
 }
 
 func main() {
-	var metricsAddr string
-	var enableLeaderElection bool
-	var probeAddr string
+	var (
+		metricsAddr          string
+		enableLeaderElection bool
+		probeAddr            string
+		configPath           string
+	)
+
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
+	flag.StringVar(&configPath, "config", "hack/config.yaml", "Path to config file.")
 	opts := zap.Options{
 		Development: true,
 	}
 	opts.BindFlags(flag.CommandLine)
 	flag.Parse()
+
+	cfg, err := config.GetConfig(configPath)
+	if err != nil {
+		fmt.Println(err)
+		setupLog.Error(err, "failed to get config")
+		os.Exit(1)
+	}
 
 	ctrl.SetLogger(zap.New(zap.UseFlagOptions(&opts)))
 
@@ -89,10 +103,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&controllers.S3UserClaimReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
+	s3UserClaimReconciler := s3userclaim.NewReconciler(mgr, cfg)
+	if err = s3UserClaimReconciler.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "S3UserClaim")
 		os.Exit(1)
 	}

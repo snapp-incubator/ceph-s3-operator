@@ -1,0 +1,4 @@
+rgw:
+  endpoint: http://localhost:8000
+  accessKey: 'accessKey'
+  secretKey: 'secretKey'
