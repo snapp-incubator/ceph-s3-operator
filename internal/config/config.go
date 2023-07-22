@@ -14,11 +14,13 @@ type Rgw struct {
 }
 
 type Config struct {
-	Rgw *Rgw `koanf:"rgw"`
+	ClusterName string `koanf:"clusterName"`
+	Rgw         *Rgw   `koanf:"rgw"`
 }
 
 var (
 	defaultConfig = Config{
+		ClusterName: "okd4-main",
 		Rgw: &Rgw{
 			Endpoint:  "http://localhost:8000",
 			AccessKey: "accessKey",

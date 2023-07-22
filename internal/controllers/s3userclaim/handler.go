@@ -18,13 +18,17 @@ package s3userclaim
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"reflect"
 
 	"github.com/ceph/go-ceph/rgw/admin"
 	"github.com/go-logr/logr"
 	"github.com/opdev/subreconciler"
-	"k8s.io/apimachinery/pkg/api/errors"
+	k8serrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -38,10 +42,18 @@ type Reconciler struct {
 	client.Client
 	scheme *runtime.Scheme
 
-	logger       logr.Logger
-	s3UserClaim  *s3v1alpha1.S3UserClaim
-	s3UserName   string
-	cephUserName string
+	logger logr.Logger
+
+	// reconcile specific variables
+	s3UserClaim *s3v1alpha1.S3UserClaim
+	user        *admin.User
+	tenant      string
+	userId      string
+	s3UserName  string
+
+	// configurations
+	displayName  string
+	clusterName  string
 	rgwAccessKey string
 	rgwSecretKey string
 	rgwEndpoint  string
@@ -51,6 +63,7 @@ func NewReconciler(mgr manager.Manager, cfg *config.Config) *Reconciler {
 	return &Reconciler{
 		Client:       mgr.GetClient(),
 		scheme:       mgr.GetScheme(),
+		clusterName:  cfg.ClusterName,
 		rgwAccessKey: cfg.Rgw.AccessKey,
 		rgwSecretKey: cfg.Rgw.SecretKey,
 		rgwEndpoint:  cfg.Rgw.Endpoint,
@@ -66,7 +79,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 
 	// Handle object fetch error
 	switch err := r.Get(ctx, req.NamespacedName, r.s3UserClaim); {
-	case errors.IsNotFound(err):
+	case k8serrors.IsNotFound(err):
 		return subreconciler.Evaluate(subreconciler.DoNotRequeue())
 	case err != nil:
 		r.logger.Error(err, "failed to fetch object")
@@ -84,7 +97,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		r.ensureCephUser,
 		r.ensureS3User,
 	}
-
 	for _, subrec := range subrecs {
 		result, err := subrec(ctx)
 		if subreconciler.ShouldHaltOrRequeue(result, err) {
@@ -95,37 +107,46 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	return subreconciler.Evaluate(subreconciler.DoNotRequeue())
 }
 
-func (r *Reconciler) initVars(ctx context.Context) (*ctrl.Result, error) {
-	r.s3UserName = fmt.Sprint("")
-	r.cephUserName = fmt.Sprint("")
+func (r *Reconciler) initVars(context.Context) (*ctrl.Result, error) {
+	r.userId = r.s3UserClaim.Name
+	r.tenant = fmt.Sprintf("%s.%s", r.clusterName, r.s3UserClaim.ObjectMeta.Namespace)
+	r.displayName = fmt.Sprintf("%s in %s.%s", r.s3UserClaim.Name, r.s3UserClaim.Namespace, r.clusterName)
+
+	r.s3UserName = fmt.Sprintf("%s.%s", r.s3UserClaim.ObjectMeta.Namespace, r.s3UserClaim.Name)
 
 	return subreconciler.ContinueReconciling()
 }
 
 func (r *Reconciler) ensureCephUser(ctx context.Context) (*ctrl.Result, error) {
-	co, err := admin.New(r.rgwEndpoint, r.rgwAccessKey, r.rgwSecretKey, nil)
+	rgwClient, err := admin.New(r.rgwEndpoint, r.rgwAccessKey, r.rgwSecretKey, nil)
 	if err != nil {
 		r.logger.Error(err, "failed to create rgw connection")
 		return subreconciler.Requeue()
 	}
 
-	// Create user
-	user, err := co.CreateUser(context.Background(), admin.User{
-		Tenant:      "felan",
-		ID:          "testuser",
-		DisplayName: "Test User",
-	})
-	if err != nil {
-		r.logger.Error(err, "failed to create ceph user")
-		return subreconciler.Requeue()
+	desiredUser := admin.User{
+		Tenant:      r.tenant,
+		ID:          r.userId,
+		DisplayName: r.displayName,
 	}
 
-	// Create subuser
-	if err := co.CreateSubuser(context.Background(), user, admin.SubuserSpec{
-		Name:   "testsubuser",
-		Access: admin.SubuserAccessRead,
-	}); err != nil {
-		r.logger.Error(err, "failed to create ceph sub-user")
+	switch _, err = rgwClient.GetUser(ctx, desiredUser); {
+	case err == nil:
+		user, err := rgwClient.ModifyUser(ctx, desiredUser)
+		if err != nil {
+			r.logger.Error(err, "failed to update ceph user")
+			return subreconciler.Requeue()
+		}
+		r.user = &user
+	case errors.Is(err, admin.ErrNoSuchUser):
+		user, err := r.createCephUser(ctx, rgwClient)
+		if err != nil {
+			r.logger.Error(err, "failed to create ceph user")
+			return subreconciler.Requeue()
+		}
+		r.user = user
+	default:
+		r.logger.Error(err, "failed to get ceph user")
 		return subreconciler.Requeue()
 	}
 
@@ -133,5 +154,48 @@ func (r *Reconciler) ensureCephUser(ctx context.Context) (*ctrl.Result, error) {
 }
 
 func (r *Reconciler) ensureS3User(ctx context.Context) (*ctrl.Result, error) {
-	return subreconciler.ContinueReconciling()
+	existingS3User := &s3v1alpha1.S3User{}
+
+	switch err := r.Get(ctx, types.NamespacedName{}, existingS3User); {
+	case k8serrors.IsNotFound(err):
+		s3user := r.assembleS3User()
+		if err := r.Create(ctx, s3user); err != nil {
+			r.logger.Error(err, "failed to create s3 user")
+			return subreconciler.Requeue()
+		}
+		return subreconciler.ContinueReconciling()
+	case err != nil:
+		r.logger.Error(err, "failed to get s3 user")
+		return subreconciler.Requeue()
+	default:
+		desiredS3user := r.assembleS3User()
+		if !reflect.DeepEqual(desiredS3user.Spec, existingS3User.Spec) ||
+			!reflect.DeepEqual(desiredS3user.Status, existingS3User.Status) {
+			existingS3User.Spec = *desiredS3user.Spec.DeepCopy()
+			if err := r.Update(ctx, existingS3User); err != nil {
+				r.logger.Error(err, "failed to update s3 user")
+				return subreconciler.Requeue()
+			}
+		}
+		return subreconciler.ContinueReconciling()
+	}
+}
+
+func (r *Reconciler) createCephUser(ctx context.Context, rgwClient *admin.API) (*admin.User, error) {
+	user, err := rgwClient.CreateUser(ctx, admin.User{
+		Tenant:      r.tenant,
+		ID:          r.userId,
+		DisplayName: r.displayName,
+	})
+	return &user, err
+}
+
+func (r *Reconciler) assembleS3User() *s3v1alpha1.S3User {
+	return &s3v1alpha1.S3User{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: r.s3UserName,
+		},
+		Spec:   s3v1alpha1.S3UserSpec{},
+		Status: s3v1alpha1.S3UserStatus{},
+	}
 }

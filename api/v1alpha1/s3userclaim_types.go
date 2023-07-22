@@ -29,7 +29,7 @@ type S3UserClaimSpec struct {
 	// +optional
 	S3ClassName string `json:"s3ClassName,omitempty"`
 	// +optional
-	ReadOnlySecret string `json:"readOnlySecret,omitempty"`
+	ReadOnlySecret *string `json:"readOnlySecret,omitempty"`
 	// +kubebuilder:validation:Required
 	AdminSecret string `json:"adminSecret"`
 }

@@ -31,3 +31,29 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - s3.snappcloud.io
+  resources:
+  - s3users
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - s3.snappcloud.io
+  resources:
+  - s3users/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - s3.snappcloud.io
+  resources:
+  - s3users/status
+  verbs:
+  - get
+  - patch
+  - update
