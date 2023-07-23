@@ -1,3 +1,4 @@
+s3UserClass: ceph-default
 clusterName: okd4-main
 rgw:
   endpoint: http://localhost:8000

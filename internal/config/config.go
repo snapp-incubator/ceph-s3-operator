@@ -14,12 +14,14 @@ type Rgw struct {
 }
 
 type Config struct {
+	S3UserClass string `koanf:"s3UserClass"`
 	ClusterName string `koanf:"clusterName"`
 	Rgw         *Rgw   `koanf:"rgw"`
 }
 
 var (
 	defaultConfig = Config{
+		S3UserClass: "ceph-default",
 		ClusterName: "okd4-main",
 		Rgw: &Rgw{
 			Endpoint:  "http://localhost:8000",

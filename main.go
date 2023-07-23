@@ -33,7 +33,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	s3v1alpha1 "github.com/snapp-incubator/s3-operator/api/v1alpha1"
-	"github.com/snapp-incubator/s3-operator/controllers"
 	"github.com/snapp-incubator/s3-operator/internal/config"
 	"github.com/snapp-incubator/s3-operator/internal/controllers/s3user"
 	"github.com/snapp-incubator/s3-operator/internal/controllers/s3userclaim"
@@ -113,13 +112,6 @@ func main() {
 
 	s3UserReconciler := s3user.NewReconciler(mgr)
 	if err = s3UserReconciler.SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "S3User")
-		os.Exit(1)
-	}
-	if err = (&controllers.S3UserReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "S3User")
 		os.Exit(1)
 	}

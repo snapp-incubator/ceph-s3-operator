@@ -26,10 +26,12 @@ type S3Quota struct {
 
 // S3UserClaimSpec defines the desired state of S3UserClaim
 type S3UserClaimSpec struct {
-	// +optional
-	S3ClassName string `json:"s3ClassName,omitempty"`
-	// +optional
-	ReadOnlySecret *string `json:"readOnlySecret,omitempty"`
+	// +kubebuilder:validation:Optional
+	S3UserClass string `json:"s3UserClass,omitempty"`
+
+	// +kubebuilder:validation:Required
+	ReadonlySecret string `json:"readonlySecret"`
+
 	// +kubebuilder:validation:Required
 	AdminSecret string `json:"adminSecret"`
 }
@@ -61,4 +63,8 @@ type S3UserClaimList struct {
 
 func init() {
 	SchemeBuilder.Register(&S3UserClaim{}, &S3UserClaimList{})
+}
+
+func (suc *S3UserClaim) GetS3UserClass() string {
+	return suc.Spec.S3UserClass
 }

@@ -25,6 +25,7 @@ import (
 	"github.com/ceph/go-ceph/rgw/admin"
 	"github.com/go-logr/logr"
 	"github.com/opdev/subreconciler"
+	v1 "k8s.io/api/core/v1"
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -46,7 +47,7 @@ type Reconciler struct {
 
 	// reconcile specific variables
 	s3UserClaim *s3v1alpha1.S3UserClaim
-	user        *admin.User
+	cephUser    *admin.User
 	tenant      string
 	userId      string
 	s3UserName  string
@@ -57,12 +58,15 @@ type Reconciler struct {
 	rgwAccessKey string
 	rgwSecretKey string
 	rgwEndpoint  string
+	s3UserClass  string
 }
 
 func NewReconciler(mgr manager.Manager, cfg *config.Config) *Reconciler {
 	return &Reconciler{
-		Client:       mgr.GetClient(),
-		scheme:       mgr.GetScheme(),
+		Client: mgr.GetClient(),
+		scheme: mgr.GetScheme(),
+
+		s3UserClass:  cfg.S3UserClass,
 		clusterName:  cfg.ClusterName,
 		rgwAccessKey: cfg.Rgw.AccessKey,
 		rgwSecretKey: cfg.Rgw.SecretKey,
@@ -95,7 +99,10 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	subrecs := []subreconciler.Fn{
 		r.initVars,
 		r.ensureCephUser,
+		r.ensureAdminSecret,
+		r.ensureReadonlySecret,
 		r.ensureS3User,
+		r.updateS3UserClaimStatus,
 	}
 	for _, subrec := range subrecs {
 		result, err := subrec(ctx)
@@ -137,17 +144,79 @@ func (r *Reconciler) ensureCephUser(ctx context.Context) (*ctrl.Result, error) {
 			r.logger.Error(err, "failed to update ceph user")
 			return subreconciler.Requeue()
 		}
-		r.user = &user
+		r.cephUser = &user
 	case errors.Is(err, admin.ErrNoSuchUser):
 		user, err := r.createCephUser(ctx, rgwClient)
 		if err != nil {
 			r.logger.Error(err, "failed to create ceph user")
 			return subreconciler.Requeue()
 		}
-		r.user = user
+		r.cephUser = user
 	default:
 		r.logger.Error(err, "failed to get ceph user")
 		return subreconciler.Requeue()
+	}
+
+	return subreconciler.ContinueReconciling()
+}
+
+func (r *Reconciler) ensureAdminSecret(ctx context.Context) (*ctrl.Result, error) {
+	adminSecret := &v1.Secret{}
+
+	switch err := r.Get(
+		ctx,
+		types.NamespacedName{Namespace: r.s3UserClaim.Namespace, Name: r.s3UserClaim.Spec.AdminSecret},
+		adminSecret,
+	); {
+	case k8serrors.IsNotFound(err):
+		secret := r.assembleAdminSecret()
+		if err := r.Create(ctx, secret); err != nil {
+			r.logger.Error(err, "failed to create admin secret")
+			return subreconciler.Requeue()
+		}
+	case err != nil:
+		r.logger.Error(err, "failed to get admin secret")
+		return subreconciler.Requeue()
+	default:
+		secret := r.assembleAdminSecret()
+		if !reflect.DeepEqual(adminSecret.Data, secret.Data) {
+			adminSecret.Data = secret.Data
+			if err := r.Update(ctx, adminSecret); err != nil {
+				r.logger.Error(err, "failed to update admin secret")
+				return subreconciler.Requeue()
+			}
+		}
+	}
+
+	return subreconciler.ContinueReconciling()
+}
+
+func (r *Reconciler) ensureReadonlySecret(ctx context.Context) (*ctrl.Result, error) {
+	readonlySecret := &v1.Secret{}
+
+	switch err := r.Get(
+		ctx,
+		types.NamespacedName{Namespace: r.s3UserClaim.Namespace, Name: r.s3UserClaim.Spec.ReadonlySecret},
+		readonlySecret,
+	); {
+	case k8serrors.IsNotFound(err):
+		secret := r.assembleReadonlySecret()
+		if err := r.Create(ctx, secret); err != nil {
+			r.logger.Error(err, "failed to create admin secret")
+			return subreconciler.Requeue()
+		}
+	case err != nil:
+		r.logger.Error(err, "failed to get admin secret")
+		return subreconciler.Requeue()
+	default:
+		secret := r.assembleReadonlySecret()
+		if !reflect.DeepEqual(readonlySecret.Data, secret.Data) {
+			readonlySecret.Data = secret.Data
+			if err := r.Update(ctx, readonlySecret); err != nil {
+				r.logger.Error(err, "failed to update readonly secret")
+				return subreconciler.Requeue()
+			}
+		}
 	}
 
 	return subreconciler.ContinueReconciling()
@@ -181,6 +250,14 @@ func (r *Reconciler) ensureS3User(ctx context.Context) (*ctrl.Result, error) {
 	}
 }
 
+func (r *Reconciler) updateS3UserClaimStatus(ctx context.Context) (*ctrl.Result, error) {
+	if err := r.Update(ctx, r.s3UserClaim); err != nil {
+		r.logger.Error(err, "failed to update s3 user claim")
+		return subreconciler.Requeue()
+	}
+	return subreconciler.ContinueReconciling()
+}
+
 func (r *Reconciler) createCephUser(ctx context.Context, rgwClient *admin.API) (*admin.User, error) {
 	user, err := rgwClient.CreateUser(ctx, admin.User{
 		Tenant:      r.tenant,
@@ -197,5 +274,31 @@ func (r *Reconciler) assembleS3User() *s3v1alpha1.S3User {
 		},
 		Spec:   s3v1alpha1.S3UserSpec{},
 		Status: s3v1alpha1.S3UserStatus{},
+	}
+}
+
+func (r *Reconciler) assembleAdminSecret() *v1.Secret {
+	return &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: r.s3UserClaim.Namespace,
+			Name:      r.s3UserClaim.Spec.AdminSecret,
+		},
+		Data: map[string][]byte{
+			"accessKey": []byte(r.cephUser.Keys[0].AccessKey),
+			"secretKey": []byte(r.cephUser.Keys[0].SecretKey),
+		},
+	}
+}
+
+func (r *Reconciler) assembleReadonlySecret() *v1.Secret {
+	return &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Namespace: r.s3UserClaim.Namespace,
+			Name:      r.s3UserClaim.Spec.ReadonlySecret,
+		},
+		Data: map[string][]byte{
+			"accessKey": []byte(r.cephUser.Keys[0].AccessKey),
+			"secretKey": []byte(r.cephUser.Keys[0].SecretKey),
+		},
 	}
 }

@@ -39,10 +39,11 @@ spec:
                 type: string
               readOnlySecret:
                 type: string
-              s3ClassName:
+              s3UserClass:
                 type: string
             required:
             - adminSecret
+            - readOnlySecret
             type: object
           status:
             description: S3UserClaimStatus defines the observed state of S3UserClaim
