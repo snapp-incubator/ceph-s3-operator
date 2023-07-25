@@ -39,6 +39,9 @@ type S3UserClaimSpec struct {
 type S3UserClaimStatus struct {
 	// +kubebuilder:validation:Optional
 	Quota *UserQuota `json:"quota,omitempty"`
+
+	// +kubebuilder:validation:Required
+	S3UserName string `json:"s3UserName"`
 }
 
 //+kubebuilder:object:root=true

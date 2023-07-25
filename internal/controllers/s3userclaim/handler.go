@@ -54,12 +54,12 @@ type Reconciler struct {
 	clusterResourceQuota *openshiftquota.ClusterResourceQuota
 	s3UserClaim          *s3v1alpha1.S3UserClaim
 	cephUser             *admin.User
-	tenant               string
-	userId               string
+	cephTenant           string
+	cephDisplayName      string
+	cephUserId           string
 	s3UserName           string
 
 	// configurations
-	displayName  string
 	clusterName  string
 	rgwAccessKey string
 	rgwSecretKey string
@@ -121,9 +121,9 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 }
 
 func (r *Reconciler) initVars(context.Context) (*ctrl.Result, error) {
-	r.userId = r.s3UserClaim.Name
-	r.tenant = fmt.Sprintf("%s_%s", r.clusterName, r.s3UserClaim.Namespace)
-	r.displayName = fmt.Sprintf("%s in %s.%s", r.s3UserClaim.Name, r.s3UserClaim.Namespace, r.clusterName)
+	r.cephUserId = r.s3UserClaim.Name
+	r.cephTenant = fmt.Sprintf("%s_%s", r.clusterName, r.s3UserClaim.Namespace)
+	r.cephDisplayName = fmt.Sprintf("%s in %s.%s", r.s3UserClaim.Name, r.s3UserClaim.Namespace, r.clusterName)
 
 	r.s3UserName = fmt.Sprintf("%s.%s", r.s3UserClaim.Namespace, r.s3UserClaim.Name)
 
@@ -134,8 +134,8 @@ func (r *Reconciler) ensureCephUser(ctx context.Context) (*ctrl.Result, error) {
 	desiredUser := admin.User{
 		// Embed tenant name in the ID field instead of setting Tenant field explicitly because
 		// GetUser requires Tenant inside ID for retrieving the user
-		ID:          fmt.Sprintf("%s$%s", r.tenant, r.userId),
-		DisplayName: r.displayName,
+		ID:          fmt.Sprintf("%s$%s", r.cephTenant, r.cephUserId),
+		DisplayName: r.cephDisplayName,
 		UserQuota: admin.QuotaSpec{
 			QuotaType:  consts.QuotaTypeUser,
 			Enabled:    pointer.Bool(true),
@@ -157,7 +157,7 @@ func (r *Reconciler) ensureCephUser(ctx context.Context) (*ctrl.Result, error) {
 			r.cephUser = exitingUser
 		}
 	case errors.Is(err, admin.ErrNoSuchUser):
-		user, err := r.createCephUser(ctx, &desiredUser)
+		user, err := r.rgwClient.CreateUser(ctx, &desiredUser)
 		if err != nil {
 			r.logger.Error(err, "failed to create ceph user")
 			return subreconciler.Requeue()
@@ -168,6 +168,7 @@ func (r *Reconciler) ensureCephUser(ctx context.Context) (*ctrl.Result, error) {
 		return subreconciler.Requeue()
 	}
 
+	// TODO: What should be done here? Requeueing won't help. Emit an event or increasing a prometheus counter :-?
 	if len(r.cephUser.Keys) == 0 {
 		err := fmt.Errorf("ceph user doesn't have any keys")
 		r.logger.Error(err, "")
@@ -210,7 +211,7 @@ func (r *Reconciler) ensureAdminSecret(ctx context.Context) (*ctrl.Result, error
 func (r *Reconciler) ensureS3User(ctx context.Context) (*ctrl.Result, error) {
 	existingS3User := &s3v1alpha1.S3User{}
 
-	switch err := r.Get(ctx, types.NamespacedName{}, existingS3User); {
+	switch err := r.Get(ctx, types.NamespacedName{Name: r.s3UserName}, existingS3User); {
 	case apierrors.IsNotFound(err):
 		s3user, err := r.assembleS3User()
 		if err != nil {
@@ -231,8 +232,7 @@ func (r *Reconciler) ensureS3User(ctx context.Context) (*ctrl.Result, error) {
 			r.logger.Error(err, "failed to assemble s3 user")
 			return subreconciler.Requeue()
 		}
-		if !apiequality.Semantic.DeepEqual(desiredS3user.Spec, existingS3User.Spec) ||
-			!apiequality.Semantic.DeepEqual(desiredS3user.Status, existingS3User.Status) {
+		if !apiequality.Semantic.DeepEqual(desiredS3user.Spec, existingS3User.Spec) {
 			existingS3User.Spec = *desiredS3user.Spec.DeepCopy()
 			if err := r.Update(ctx, existingS3User); err != nil {
 				r.logger.Error(err, "failed to update s3 user")
@@ -245,7 +245,8 @@ func (r *Reconciler) ensureS3User(ctx context.Context) (*ctrl.Result, error) {
 
 func (r *Reconciler) updateS3UserClaimStatus(ctx context.Context) (*ctrl.Result, error) {
 	status := s3v1alpha1.S3UserClaimStatus{
-		Quota: r.s3UserClaim.Spec.Quota,
+		Quota:      r.s3UserClaim.Spec.Quota,
+		S3UserName: r.s3UserName,
 	}
 
 	if !apiequality.Semantic.DeepEqual(r.s3UserClaim.Status, status) {
@@ -257,15 +258,6 @@ func (r *Reconciler) updateS3UserClaimStatus(ctx context.Context) (*ctrl.Result,
 	}
 
 	return subreconciler.ContinueReconciling()
-}
-
-func (r *Reconciler) createCephUser(ctx context.Context, desiredUser *admin.User) (*admin.User, error) {
-	if desiredUser == nil {
-		return nil, fmt.Errorf("desired user is nil")
-	}
-
-	user, err := r.rgwClient.CreateUser(ctx, desiredUser)
-	return user, err
 }
 
 func (r *Reconciler) assembleS3User() (*s3v1alpha1.S3User, error) {
