@@ -20,11 +20,14 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"time"
 
+	"github.com/ceph/go-ceph/rgw/admin"
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
+	openshiftquota "github.com/openshift/api/quota"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
@@ -36,6 +39,7 @@ import (
 	"github.com/snapp-incubator/s3-operator/internal/config"
 	"github.com/snapp-incubator/s3-operator/internal/controllers/s3user"
 	"github.com/snapp-incubator/s3-operator/internal/controllers/s3userclaim"
+	"github.com/snapp-incubator/s3-operator/internal/rgwclient"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -46,6 +50,8 @@ var (
 
 func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
+
+	utilruntime.Must(openshiftquota.Install(scheme))
 
 	utilruntime.Must(s3v1alpha1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
@@ -104,15 +110,29 @@ func main() {
 		os.Exit(1)
 	}
 
-	s3UserClaimReconciler := s3userclaim.NewReconciler(mgr, cfg)
+	co, err := admin.New(cfg.Rgw.Endpoint, cfg.Rgw.AccessKey, cfg.Rgw.SecretKey, nil)
+	if err != nil {
+		setupLog.Error(err, "failed to create rgw connection")
+		os.Exit(1)
+	}
+	rgwClient := rgwclient.NewRgwClient(co)
+
+	// Setup operators
+	s3UserClaimReconciler := s3userclaim.NewReconciler(mgr, cfg, rgwClient)
 	if err = s3UserClaimReconciler.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "S3UserClaim")
 		os.Exit(1)
 	}
-
 	s3UserReconciler := s3user.NewReconciler(mgr)
 	if err = s3UserReconciler.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "S3User")
+		os.Exit(1)
+	}
+
+	// Setup webhooks
+	s3v1alpha1.ValidationTimeout = time.Duration(cfg.ValidationWebhookTimeoutSeconds) * time.Second
+	if err = (&s3v1alpha1.S3UserClaim{}).SetupWebhookWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create webhook", "webhook", "S3UserClaim")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder

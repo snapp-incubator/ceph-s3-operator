@@ -14,19 +14,21 @@ type Rgw struct {
 }
 
 type Config struct {
-	S3UserClass string `koanf:"s3UserClass"`
-	ClusterName string `koanf:"clusterName"`
-	Rgw         *Rgw   `koanf:"rgw"`
+	S3UserClass                     string `koanf:"s3UserClass"`
+	ClusterName                     string `koanf:"clusterName"`
+	ValidationWebhookTimeoutSeconds int    `koanf:"validationWebhookTimeoutSeconds"`
+	Rgw                             *Rgw   `koanf:"rgw"`
 }
 
 var (
 	defaultConfig = Config{
-		S3UserClass: "ceph-default",
-		ClusterName: "okd4-main",
+		S3UserClass:                     "ceph-default",
+		ClusterName:                     "okd4-main",
+		ValidationWebhookTimeoutSeconds: 10,
 		Rgw: &Rgw{
 			Endpoint:  "http://localhost:8000",
-			AccessKey: "accessKey",
-			SecretKey: "secretKey",
+			AccessKey: "2262XNX11FZRR44XWIRD",
+			SecretKey: "rmtuS1Uj1bIC08QFYGW18GfSHAbkPqdsuYynNudw",
 		},
 	}
 )

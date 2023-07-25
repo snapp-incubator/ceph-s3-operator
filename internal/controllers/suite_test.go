@@ -17,11 +17,13 @@ limitations under the License.
 package controllers
 
 import (
+	"context"
 	"path/filepath"
 	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
+	ctrl "sigs.k8s.io/controller-runtime"
 
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
@@ -31,13 +33,13 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	s3v1alpha1 "github.com/snapp-incubator/s3-operator/api/v1alpha1"
+	"github.com/snapp-incubator/s3-operator/internal/config"
+	"github.com/snapp-incubator/s3-operator/internal/controllers/s3userclaim"
+	"github.com/snapp-incubator/s3-operator/internal/rgwclient"
 	//+kubebuilder:scaffold:imports
 )
 
-// These tests use Ginkgo (BDD-style Go testing framework). Refer to
-// http://onsi.github.io/ginkgo/ to learn more about Ginkgo.
-
-var cfg *rest.Config
+var restConfig *rest.Config
 var k8sClient client.Client
 var testEnv *envtest.Environment
 
@@ -57,20 +59,37 @@ var _ = BeforeSuite(func() {
 	}
 
 	var err error
-	// cfg is defined in this file globally.
-	cfg, err = testEnv.Start()
+	// restConfig is defined in this file globally.
+	restConfig, err = testEnv.Start()
 	Expect(err).NotTo(HaveOccurred())
-	Expect(cfg).NotTo(BeNil())
+	Expect(restConfig).NotTo(BeNil())
 
 	err = s3v1alpha1.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
 
 	//+kubebuilder:scaffold:scheme
 
-	k8sClient, err = client.New(cfg, client.Options{Scheme: scheme.Scheme})
+	k8sClient, err = client.New(restConfig, client.Options{Scheme: scheme.Scheme})
 	Expect(err).NotTo(HaveOccurred())
 	Expect(k8sClient).NotTo(BeNil())
 
+	k8sManager, err := ctrl.NewManager(restConfig, ctrl.Options{
+		Scheme: scheme.Scheme,
+	})
+	Expect(err).ToNot(HaveOccurred())
+
+	rgwClient := rgwclient.NewMockRgwClient()
+	cfg := &config.Config{}
+	s3UserClaimReconciler := s3userclaim.NewReconciler(k8sManager, cfg, rgwClient)
+	err = s3UserClaimReconciler.SetupWithManager(k8sManager)
+	Expect(err).ToNot(HaveOccurred())
+
+	go func() {
+		defer GinkgoRecover()
+		// todo: set proper context
+		err = k8sManager.Start(context.TODO())
+		Expect(err).ToNot(HaveOccurred(), "failed to run manager")
+	}()
 })
 
 var _ = AfterSuite(func() {

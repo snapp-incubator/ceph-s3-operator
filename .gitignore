@@ -26,3 +26,7 @@ Dockerfile.cross
 *~
 
 vendor/
+# Downloaded go release for building testing Dockerfile
+testing/go*.tar.gz
+# Container id files of dev env containers
+testing/.run.*

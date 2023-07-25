@@ -17,18 +17,24 @@ limitations under the License.
 package v1alpha1
 
 import (
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // S3UserSpec defines the desired state of S3User
 type S3UserSpec struct {
+	// +kubebuilder:validation:Optional
+	S3UserClass string `json:"s3UserClass,omitempty"`
+
+	// +kubebuilder:validation:Optional
 	Quota UserQuota `json:"quota,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	ClaimRef *v1.ObjectReference `json:"claimRef,omitempty"`
 }
 
 // S3UserStatus defines the observed state of S3User
 type S3UserStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
 }
 
 //+kubebuilder:object:root=true
@@ -55,4 +61,8 @@ type S3UserList struct {
 
 func init() {
 	SchemeBuilder.Register(&S3User{}, &S3UserList{})
+}
+
+func (suc *S3User) GetS3UserClass() string {
+	return suc.Spec.S3UserClass
 }

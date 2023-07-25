@@ -41,6 +41,8 @@ const (
 var (
 	s3userclaimlog = logf.Log.WithName("s3userclaim-resource")
 	runtimeClient  client.Client
+
+	ValidationTimeout time.Duration
 )
 
 func (suc *S3UserClaim) SetupWebhookWithManager(mgr ctrl.Manager) error {
@@ -71,7 +73,10 @@ func (suc *S3UserClaim) ValidateDelete() error {
 }
 
 func validateS3UserClaim(suc *S3UserClaim) error {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	// TODO(therealak12) use apierrors.NewInvalid() and wrap errors
+	// https://book.kubebuilder.io/cronjob-tutorial/webhook-implementation.html
+
+	ctx, cancel := context.WithTimeout(context.Background(), ValidationTimeout)
 	defer cancel()
 
 	if err := validateAgainstNamespaceQuota(ctx, suc); err != nil {
