@@ -20,16 +20,9 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
 // S3UserSpec defines the desired state of S3User
 type S3UserSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-
-	// Foo is an example field of S3User. Edit s3user_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	Quota UserQuota `json:"quota,omitempty"`
 }
 
 // S3UserStatus defines the observed state of S3User

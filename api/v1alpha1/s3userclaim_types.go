@@ -20,12 +20,11 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-type S3Quota struct {
-	Buckets string `json:"buckets,omitempty"`
-}
-
 // S3UserClaimSpec defines the desired state of S3UserClaim
 type S3UserClaimSpec struct {
+	// +kubebuilder:validation:Optional
+	S3User string `json:"s3User,omitempty"`
+
 	// +kubebuilder:validation:Optional
 	S3UserClass string `json:"s3UserClass,omitempty"`
 
@@ -34,6 +33,9 @@ type S3UserClaimSpec struct {
 
 	// +kubebuilder:validation:Required
 	AdminSecret string `json:"adminSecret"`
+
+	// +kubebuilder:validation:Optional
+	Quota *UserQuota `json:"quota,omitempty"`
 }
 
 // S3UserClaimStatus defines the observed state of S3UserClaim
