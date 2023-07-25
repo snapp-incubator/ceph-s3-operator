@@ -20,13 +20,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"reflect"
 
 	"github.com/ceph/go-ceph/rgw/admin"
 	"github.com/go-logr/logr"
 	"github.com/opdev/subreconciler"
 	openshiftquota "github.com/openshift/api/quota/v1"
 	v1 "k8s.io/api/core/v1"
+	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -195,7 +195,7 @@ func (r *Reconciler) ensureAdminSecret(ctx context.Context) (*ctrl.Result, error
 		return subreconciler.Requeue()
 	default:
 		secret := r.assembleAdminSecret()
-		if !reflect.DeepEqual(adminSecret.Data, secret.Data) {
+		if !apiequality.Semantic.DeepEqual(adminSecret.Data, secret.Data) {
 			adminSecret.Data = secret.Data
 			if err := r.Update(ctx, adminSecret); err != nil {
 				r.logger.Error(err, "failed to update admin secret")
@@ -231,8 +231,8 @@ func (r *Reconciler) ensureS3User(ctx context.Context) (*ctrl.Result, error) {
 			r.logger.Error(err, "failed to assemble s3 user")
 			return subreconciler.Requeue()
 		}
-		if !reflect.DeepEqual(desiredS3user.Spec, existingS3User.Spec) ||
-			!reflect.DeepEqual(desiredS3user.Status, existingS3User.Status) {
+		if !apiequality.Semantic.DeepEqual(desiredS3user.Spec, existingS3User.Spec) ||
+			!apiequality.Semantic.DeepEqual(desiredS3user.Status, existingS3User.Status) {
 			existingS3User.Spec = *desiredS3user.Spec.DeepCopy()
 			if err := r.Update(ctx, existingS3User); err != nil {
 				r.logger.Error(err, "failed to update s3 user")
@@ -244,10 +244,18 @@ func (r *Reconciler) ensureS3User(ctx context.Context) (*ctrl.Result, error) {
 }
 
 func (r *Reconciler) updateS3UserClaimStatus(ctx context.Context) (*ctrl.Result, error) {
-	if err := r.Update(ctx, r.s3UserClaim); err != nil {
-		r.logger.Error(err, "failed to update s3 user claim")
-		return subreconciler.Requeue()
+	status := s3v1alpha1.S3UserClaimStatus{
+		Quota: r.s3UserClaim.Spec.Quota,
 	}
+
+	if !apiequality.Semantic.DeepEqual(r.s3UserClaim.Status, status) {
+		r.s3UserClaim.Status = status
+		if err := r.Update(ctx, r.s3UserClaim); err != nil {
+			r.logger.Error(err, "failed to update s3 user claim")
+			return subreconciler.Requeue()
+		}
+	}
+
 	return subreconciler.ContinueReconciling()
 }
 

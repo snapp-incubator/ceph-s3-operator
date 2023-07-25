@@ -18,14 +18,17 @@ package v1alpha1
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
 	openshiftquota "github.com/openshift/api/quota/v1"
 	v1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/validation/field"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
@@ -53,49 +56,91 @@ func (suc *S3UserClaim) SetupWebhookWithManager(mgr ctrl.Manager) error {
 		Complete()
 }
 
-// TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
 //+kubebuilder:webhook:path=/validate-s3-snappcloud-io-v1alpha1-s3userclaim,mutating=false,failurePolicy=fail,sideEffects=None,groups=s3.snappcloud.io,resources=s3userclaims,verbs=create;update,versions=v1alpha1,name=vs3userclaim.kb.io,admissionReviewVersions=v1
 
 var _ webhook.Validator = &S3UserClaim{}
 
 func (suc *S3UserClaim) ValidateCreate() error {
 	s3userclaimlog.Info("validate create", "name", suc.Name)
-	return validateS3UserClaim(suc)
+
+	// Validate Quota
+	errorList := validateQuota(suc)
+	if len(errorList) == 0 {
+		return nil
+	}
+
+	return apierrors.NewInvalid(suc.GroupVersionKind().GroupKind(), suc.Name, errorList)
 }
 
 func (suc *S3UserClaim) ValidateUpdate(old runtime.Object) error {
 	s3userclaimlog.Info("validate update", "name", suc.Name)
-	return validateS3UserClaim(suc)
+	allErrs := field.ErrorList{}
+
+	// Err if s3UserClass is changed
+	oldS3UserClaim, ok := old.(*S3UserClaim)
+	if !ok {
+		s3userclaimlog.Info("invalid object passed as old s3UserClaim", "type", old.GetObjectKind())
+		return fmt.Errorf(internalErrorMessage)
+	}
+	if suc.Spec.S3UserClass != oldS3UserClaim.Spec.S3UserClass {
+		allErrs = append(
+			allErrs,
+			field.Forbidden(field.NewPath("spec").Child("s3UserClass"), "s3UserClass is immutable"),
+		)
+	}
+
+	// Validate Quota
+	errorList := validateQuota(suc)
+	allErrs = append(allErrs, errorList...)
+
+	if len(allErrs) == 0 {
+		return nil
+	}
+	return apierrors.NewInvalid(suc.GroupVersionKind().GroupKind(), suc.Name, allErrs)
 }
 
 func (suc *S3UserClaim) ValidateDelete() error {
 	return nil
 }
 
-func validateS3UserClaim(suc *S3UserClaim) error {
-	// TODO(therealak12) use apierrors.NewInvalid() and wrap errors
-	// https://book.kubebuilder.io/cronjob-tutorial/webhook-implementation.html
-
+func validateQuota(suc *S3UserClaim) field.ErrorList {
 	ctx, cancel := context.WithTimeout(context.Background(), ValidationTimeout)
 	defer cancel()
 
-	if err := validateAgainstNamespaceQuota(ctx, suc); err != nil {
-		return err
+	errorList := field.ErrorList{}
+
+	quotaFieldPath := field.NewPath("spec").Child("quota")
+
+	// TODO(therealak12): refactor the code as there are similarities between two quota validator functions
+
+	exceeded, err := validateAgainstNamespaceQuota(ctx, suc)
+	if err != nil {
+		s3userclaimlog.Error(err, "failed to validate against namespace quota")
+		// todo: fix error message
+		errorList = append(errorList, field.InternalError(quotaFieldPath, errors.New("")))
+	} else if exceeded {
+		errorList = append(errorList, field.Forbidden(quotaFieldPath, "exceeded quota"))
 	}
 
-	if err := validateAgainstClusterQuota(ctx, suc); err != nil {
-		return err
+	exceeded, err = validateAgainstClusterQuota(ctx, suc)
+	if err != nil {
+		if err != nil {
+			s3userclaimlog.Error(err, "failed to validate against cluster quota")
+			// todo: fix error message
+			errorList = append(errorList, field.InternalError(quotaFieldPath, errors.New("")))
+		} else if exceeded {
+			errorList = append(errorList, field.Forbidden(quotaFieldPath, "exceeded quota"))
+		}
 	}
 
-	return nil
+	return errorList
 }
 
-func validateAgainstNamespaceQuota(ctx context.Context, suc *S3UserClaim) error {
+func validateAgainstNamespaceQuota(ctx context.Context, suc *S3UserClaim) (bool, error) {
 	// List all s3UserClaims in the namespace
 	s3UserClaimList := &S3UserClaimList{}
 	if err := runtimeClient.List(ctx, s3UserClaimList, client.InNamespace(suc.Namespace)); err != nil {
-		s3userclaimlog.Error(fmt.Errorf("failed to list s3 user claims"), "")
-		return fmt.Errorf(internalErrorMessage)
+		return false, fmt.Errorf("failed to list s3 user claims, %w", err)
 	}
 
 	// Sum all resource requests
@@ -114,35 +159,33 @@ func validateAgainstNamespaceQuota(ctx context.Context, suc *S3UserClaim) error 
 	resourceQuotaList := &v1.ResourceQuotaList{}
 	err := runtimeClient.List(ctx, resourceQuotaList, client.InNamespace(suc.Namespace))
 	if err != nil {
-		return fmt.Errorf("failed to list resource quotas, %w", err)
+		return false, fmt.Errorf("failed to list resource quotas, %w", err)
 	}
 	for _, quota := range resourceQuotaList.Items {
 		if maxObjects, ok := quota.Spec.Hard[consts.ResourceNameS3MaxObjects]; ok {
 			if totalMaxObjects.Cmp(maxObjects) > 0 {
-				return fmt.Errorf("total max objects requests exceed the quota for the namespace")
+				return true, nil
 			}
 		}
 		if maxSize, ok := quota.Spec.Hard[consts.ResourceNameS3MaxSize]; ok {
 			if totalMaxSize.Cmp(maxSize) > 0 {
-				return fmt.Errorf("total max size requests exceed the quota for the namespace")
+				return true, nil
 			}
 		}
 	}
 
-	return nil
+	return false, nil
 }
 
-func validateAgainstClusterQuota(ctx context.Context, suc *S3UserClaim) error {
-	// TODO(therealak12): refactor the code as there are similarities between this function and validateAgainstNamespaceQuota
-
+func validateAgainstClusterQuota(ctx context.Context, suc *S3UserClaim) (bool, error) {
 	// Find team's clusterResourceQuota
 	team, err := findTeam(ctx, suc)
 	if err != nil {
-		return fmt.Errorf("faield to find team, %w", err)
+		return false, fmt.Errorf("faield to find team, %w", err)
 	}
 	clusterQuota := &openshiftquota.ClusterResourceQuota{}
-	if err := runtimeClient.Get(ctx, types.NamespacedName{Name: suc.Spec.S3User}, clusterQuota); err != nil {
-		return fmt.Errorf("failed to get clusterQuota, %w", err)
+	if err := runtimeClient.Get(ctx, types.NamespacedName{Name: team}, clusterQuota); err != nil {
+		return false, fmt.Errorf("failed to get clusterQuota, %w", err)
 	}
 
 	// Sum all resource requests in team's namespaces
@@ -152,7 +195,7 @@ func validateAgainstClusterQuota(ctx context.Context, suc *S3UserClaim) error {
 	for _, ns := range namespaces {
 		s3UserClaimList := &S3UserClaimList{}
 		if err := runtimeClient.List(ctx, s3UserClaimList, client.InNamespace(ns)); err != nil {
-			return fmt.Errorf("failed to list s3UserClaims, %w", err)
+			return false, fmt.Errorf("failed to list s3UserClaims, %w", err)
 		}
 
 		for _, claim := range s3UserClaimList.Items {
@@ -168,16 +211,16 @@ func validateAgainstClusterQuota(ctx context.Context, suc *S3UserClaim) error {
 	// Validate against clusterResourceQuota
 	if maxObjects, ok := clusterQuota.Spec.Quota.Hard[consts.ResourceNameS3MaxObjects]; ok {
 		if totalMaxObjects.Cmp(maxObjects) > 0 {
-			return fmt.Errorf("current aggregated quota exceeds the cluster quota for the team")
+			return true, nil
 		}
 	}
 	if maxSize, ok := clusterQuota.Spec.Quota.Hard[consts.ResourceNameS3MaxSize]; ok {
 		if totalMaxSize.Cmp(maxSize) > 0 {
-			return fmt.Errorf("current aggregated max size exceeds the cluster quota for the team")
+			return true, nil
 		}
 	}
 
-	return nil
+	return false, nil
 }
 
 func findTeam(ctx context.Context, suc *S3UserClaim) (string, error) {

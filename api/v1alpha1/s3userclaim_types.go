@@ -23,9 +23,6 @@ import (
 // S3UserClaimSpec defines the desired state of S3UserClaim
 type S3UserClaimSpec struct {
 	// +kubebuilder:validation:Optional
-	S3User string `json:"s3User,omitempty"`
-
-	// +kubebuilder:validation:Optional
 	S3UserClass string `json:"s3UserClass,omitempty"`
 
 	// +kubebuilder:validation:Required
@@ -40,6 +37,8 @@ type S3UserClaimSpec struct {
 
 // S3UserClaimStatus defines the observed state of S3UserClaim
 type S3UserClaimStatus struct {
+	// +kubebuilder:validation:Optional
+	Quota *UserQuota `json:"quota,omitempty"`
 }
 
 //+kubebuilder:object:root=true
