@@ -26,7 +26,7 @@ var (
 		ClusterName:                     "okd4-main",
 		ValidationWebhookTimeoutSeconds: 10,
 		Rgw: &Rgw{
-			Endpoint:  "http://localhost:8000",
+			Endpoint:  "http://127.0.0.1:8000",
 			AccessKey: "2262XNX11FZRR44XWIRD",
 			SecretKey: "rmtuS1Uj1bIC08QFYGW18GfSHAbkPqdsuYynNudw",
 		},

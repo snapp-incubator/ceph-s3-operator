@@ -37,16 +37,57 @@ spec:
             properties:
               adminSecret:
                 type: string
-              readOnlySecret:
+              quota:
+                description: UserQuota specifies the quota for a user in Ceph
+                properties:
+                  maxObjects:
+                    anyOf:
+                    - type: integer
+                    - type: string
+                    description: max number of objects the user can store
+                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                    x-kubernetes-int-or-string: true
+                  maxSize:
+                    anyOf:
+                    - type: integer
+                    - type: string
+                    description: max number of bytes the user can store
+                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                    x-kubernetes-int-or-string: true
+                type: object
+              readonlySecret:
                 type: string
               s3UserClass:
                 type: string
             required:
             - adminSecret
-            - readOnlySecret
+            - readonlySecret
             type: object
           status:
             description: S3UserClaimStatus defines the observed state of S3UserClaim
+            properties:
+              quota:
+                description: UserQuota specifies the quota for a user in Ceph
+                properties:
+                  maxObjects:
+                    anyOf:
+                    - type: integer
+                    - type: string
+                    description: max number of objects the user can store
+                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                    x-kubernetes-int-or-string: true
+                  maxSize:
+                    anyOf:
+                    - type: integer
+                    - type: string
+                    description: max number of bytes the user can store
+                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                    x-kubernetes-int-or-string: true
+                type: object
+              s3UserName:
+                type: string
+            required:
+            - s3UserName
             type: object
         type: object
     served: true

@@ -20,7 +20,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"time"
 
 	"github.com/ceph/go-ceph/rgw/admin"
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
@@ -123,7 +122,7 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "S3UserClaim")
 		os.Exit(1)
 	}
-	s3UserReconciler := s3user.NewReconciler(mgr)
+	s3UserReconciler := s3user.NewReconciler(mgr, cfg)
 	if err = s3UserReconciler.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "S3User")
 		os.Exit(1)

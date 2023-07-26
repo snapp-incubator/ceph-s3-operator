@@ -265,7 +265,7 @@ TEST_CTR_NET=.run.test_ceph_net
 
 setup-dev-env:
 	docker network create test_ceph_net
-	docker run --cidfile=testing/.run.test_ceph_a --rm -d --name test_ceph_a \
+	docker run -p 8000:80 --cidfile=testing/.run.test_ceph_a --rm -d --name test_ceph_a \
     		 --hostname test_ceph_a \
     		--net test_ceph_net \
     		-v test_ceph_a_data:/tmp/ceph ceph-testing:v1.0.0 \

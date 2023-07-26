@@ -1,0 +1,27 @@
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  creationTimestamp: null
+  name: validating-webhook-configuration
+webhooks:
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
+      path: /validate-s3-snappcloud-io-v1alpha1-s3userclaim
+  failurePolicy: Fail
+  name: vs3userclaim.kb.io
+  rules:
+  - apiGroups:
+    - s3.snappcloud.io
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - s3userclaims
+  sideEffects: None

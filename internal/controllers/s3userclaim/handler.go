@@ -20,6 +20,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"regexp"
 
 	"github.com/ceph/go-ceph/rgw/admin"
 	"github.com/go-logr/logr"
@@ -87,6 +88,7 @@ func NewReconciler(mgr manager.Manager, cfg *config.Config, rgwClient rgwclient.
 
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	r.logger = log.FromContext(ctx)
+	r.s3UserClaim = &s3v1alpha1.S3UserClaim{}
 
 	// Fetch the object
 	switch err := r.Get(ctx, req.NamespacedName, r.s3UserClaim); {
@@ -121,8 +123,12 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 }
 
 func (r *Reconciler) initVars(context.Context) (*ctrl.Result, error) {
+	// Only alphanumeric characters and underscore are allowed for tenant name
+	k8sNameSpecialChars := regexp.MustCompile(`[.-]`)
+	namespace := k8sNameSpecialChars.ReplaceAllString(r.s3UserClaim.Namespace, "_")
+	clusterName := k8sNameSpecialChars.ReplaceAllString(r.clusterName, "_")
+	r.cephTenant = fmt.Sprintf("%s__%s", clusterName, namespace)
 	r.cephUserId = r.s3UserClaim.Name
-	r.cephTenant = fmt.Sprintf("%s_%s", r.clusterName, r.s3UserClaim.Namespace)
 	r.cephDisplayName = fmt.Sprintf("%s in %s.%s", r.s3UserClaim.Name, r.s3UserClaim.Namespace, r.clusterName)
 
 	r.s3UserName = fmt.Sprintf("%s.%s", r.s3UserClaim.Namespace, r.s3UserClaim.Name)
@@ -159,7 +165,7 @@ func (r *Reconciler) ensureCephUser(ctx context.Context) (*ctrl.Result, error) {
 	case errors.Is(err, admin.ErrNoSuchUser):
 		user, err := r.rgwClient.CreateUser(ctx, &desiredUser)
 		if err != nil {
-			r.logger.Error(err, "failed to create ceph user")
+			r.logger.Error(err, "failed to create ceph user", "userId", desiredUser.ID)
 			return subreconciler.Requeue()
 		}
 		r.cephUser = user
@@ -266,7 +272,7 @@ func (r *Reconciler) assembleS3User() (*s3v1alpha1.S3User, error) {
 		return nil, fmt.Errorf("failed to create claim reference, %w", err)
 	}
 
-	return &s3v1alpha1.S3User{
+	s3user := &s3v1alpha1.S3User{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: r.s3UserName,
 		},
@@ -278,7 +284,9 @@ func (r *Reconciler) assembleS3User() (*s3v1alpha1.S3User, error) {
 			},
 			ClaimRef: claimRef,
 		},
-	}, nil
+	}
+
+	return s3user, nil
 }
 
 func (r *Reconciler) assembleAdminSecret() *v1.Secret {

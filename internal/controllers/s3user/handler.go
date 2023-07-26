@@ -24,18 +24,23 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+
+	"github.com/snapp-incubator/s3-operator/internal/config"
 )
 
 // Reconciler reconciles a S3User object
 type Reconciler struct {
 	client.Client
 	scheme *runtime.Scheme
+
+	s3UserClass string
 }
 
-func NewReconciler(mgr manager.Manager) *Reconciler {
+func NewReconciler(mgr manager.Manager, cfg *config.Config) *Reconciler {
 	return &Reconciler{
-		Client: mgr.GetClient(),
-		scheme: mgr.GetScheme(),
+		Client:      mgr.GetClient(),
+		scheme:      mgr.GetScheme(),
+		s3UserClass: cfg.S3UserClass,
 	}
 }
 
