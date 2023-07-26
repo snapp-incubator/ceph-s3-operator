@@ -102,7 +102,7 @@ vet: ## Run go vet against code.
 	go vet ./...
 
 .PHONY: test
-test: manifests generate fmt vet envtest ## Run tests.
+test: manifests generate fmt vet envtest setup-dev-env ## Run tests.
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" go test ./... -coverprofile cover.out
 
 ##@ Build
@@ -262,21 +262,22 @@ catalog-push: ## Push a catalog image.
 TEST_CTR_A=.run.test_ceph_a
 TEST_CTR_B=.run.test_ceph_b
 TEST_CTR_NET=.run.test_ceph_net
-
+.PHONY: setup-dev-env
 setup-dev-env:
-	docker network create test_ceph_net
-	docker run -p 8000:80 --cidfile=testing/.run.test_ceph_a --rm -d --name test_ceph_a \
+	-docker network create test_ceph_net
+	-docker run -p 8000:80 --cidfile=testing/.run.test_ceph_a --rm -d --name test_ceph_a \
     		 --hostname test_ceph_a \
     		--net test_ceph_net \
     		-v test_ceph_a_data:/tmp/ceph ceph-testing:v1.0.0 \
     		--test-run=NONE --pause
-	docker run --cidfile=testing/.run.test_ceph_b --rm -d --name test_ceph_b \
+	-docker run --cidfile=testing/.run.test_ceph_b --rm -d --name test_ceph_b \
         		 --hostname test_ceph_b \
         		--net test_ceph_net \
         		-v test_ceph_b_data:/tmp/ceph ceph-testing:v1.0.0 \
         		--test-run=NONE --pause
 	timeout 60 sh -c 'until docker logs --tail 2 test_ceph_a | grep "pausing execution" > /dev/null; do sleep 5; echo "\n\nwaiting for ceph setup...\n\n"; done'
 
+.PHONY: teardown-dev-env
 teardown-dev-env:
 	docker rm -f test_ceph_a test_ceph_b
 	docker network rm test_ceph_net

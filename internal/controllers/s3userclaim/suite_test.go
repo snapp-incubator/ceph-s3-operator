@@ -14,18 +14,21 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package controllers
+package s3userclaim
 
 import (
 	"context"
 	"path/filepath"
 	"testing"
 
+	"github.com/ceph/go-ceph/rgw/admin"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	ctrl "sigs.k8s.io/controller-runtime"
 
+	openshiftquota "github.com/openshift/api/quota"
 	"k8s.io/client-go/kubernetes/scheme"
+	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
@@ -34,14 +37,17 @@ import (
 
 	s3v1alpha1 "github.com/snapp-incubator/s3-operator/api/v1alpha1"
 	"github.com/snapp-incubator/s3-operator/internal/config"
-	"github.com/snapp-incubator/s3-operator/internal/controllers/s3userclaim"
 	"github.com/snapp-incubator/s3-operator/internal/rgwclient"
 	//+kubebuilder:scaffold:imports
 )
 
-var restConfig *rest.Config
-var k8sClient client.Client
-var testEnv *envtest.Environment
+var (
+	restConfig       *rest.Config
+	k8sClient        client.Client
+	testEnv          *envtest.Environment
+	managerCtx       context.Context
+	managerCtxCancel context.CancelFunc
+)
 
 func TestAPIs(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -54,7 +60,7 @@ var _ = BeforeSuite(func() {
 
 	By("bootstrapping test environment")
 	testEnv = &envtest.Environment{
-		CRDDirectoryPaths:     []string{filepath.Join("..", "config", "crd", "bases")},
+		CRDDirectoryPaths:     []string{filepath.Join("..", "..", "..", "config", "crd", "bases")},
 		ErrorIfCRDPathMissing: true,
 	}
 
@@ -63,6 +69,13 @@ var _ = BeforeSuite(func() {
 	restConfig, err = testEnv.Start()
 	Expect(err).NotTo(HaveOccurred())
 	Expect(restConfig).NotTo(BeNil())
+
+	// Add schemas
+	err = openshiftquota.Install(scheme.Scheme)
+	Expect(err).NotTo(HaveOccurred())
+
+	err = clientgoscheme.AddToScheme(scheme.Scheme)
+	Expect(err).NotTo(HaveOccurred())
 
 	err = s3v1alpha1.AddToScheme(scheme.Scheme)
 	Expect(err).NotTo(HaveOccurred())
@@ -78,22 +91,27 @@ var _ = BeforeSuite(func() {
 	})
 	Expect(err).ToNot(HaveOccurred())
 
-	rgwClient := rgwclient.NewMockRgwClient()
-	cfg := &config.Config{}
-	s3UserClaimReconciler := s3userclaim.NewReconciler(k8sManager, cfg, rgwClient)
+	cfg := config.DefaultConfig
+	co, err := admin.New(cfg.Rgw.Endpoint, cfg.Rgw.AccessKey, cfg.Rgw.SecretKey, nil)
+	Expect(err).NotTo(HaveOccurred(), "failed to create rgw client")
+	rgwClient := rgwclient.NewRgwClient(co)
+	s3UserClaimReconciler := NewReconciler(k8sManager, &cfg, rgwClient)
 	err = s3UserClaimReconciler.SetupWithManager(k8sManager)
-	Expect(err).ToNot(HaveOccurred())
+	Expect(err).ToNot(HaveOccurred(), "failed to setup manager")
 
 	go func() {
 		defer GinkgoRecover()
-		// todo: set proper context
-		err = k8sManager.Start(context.TODO())
+		managerCtx, managerCtxCancel = context.WithCancel(ctrl.SetupSignalHandler())
+		err = k8sManager.Start(managerCtx)
 		Expect(err).ToNot(HaveOccurred(), "failed to run manager")
 	}()
 })
 
 var _ = AfterSuite(func() {
 	By("tearing down the test environment")
+
+	managerCtxCancel()
+
 	err := testEnv.Stop()
 	Expect(err).NotTo(HaveOccurred())
 })

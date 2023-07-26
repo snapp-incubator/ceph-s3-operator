@@ -9,4 +9,7 @@ const (
 	ResourceNameS3MaxSize    v1.ResourceName = "s3/size"
 
 	QuotaTypeUser = "user"
+
+	DataKeyAccessKey = "accessKey"
+	DataKeySecretKey = "secretKey"
 )

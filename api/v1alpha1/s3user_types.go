@@ -27,7 +27,7 @@ type S3UserSpec struct {
 	S3UserClass string `json:"s3UserClass,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	Quota UserQuota `json:"quota,omitempty"`
+	Quota *UserQuota `json:"quota,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	ClaimRef *v1.ObjectReference `json:"claimRef,omitempty"`

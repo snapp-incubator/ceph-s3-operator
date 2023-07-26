@@ -43,3 +43,10 @@ spec:
   quota: (max_buckets, max_size, max_objects)
 status:
 ```
+
+## Development
+
+We follow [Kubebuilder](https://github.com/kubernetes-sigs/kubebuilder/blob/master/DESIGN.md#development) developement
+principles, Specifically about testing in an environment similar to the real world and avoiding mocks as much as possible.
+
+For example, we don't mock RGW API. Instead, we use a simliar approach to what [go-ceph](https://github.com/ceph/go-ceph/) does. 

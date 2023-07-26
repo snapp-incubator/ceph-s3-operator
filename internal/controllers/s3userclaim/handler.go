@@ -296,7 +296,7 @@ func (r *Reconciler) assembleS3User() (*s3v1alpha1.S3User, error) {
 		},
 		Spec: s3v1alpha1.S3UserSpec{
 			S3UserClass: r.s3UserClass,
-			Quota: s3v1alpha1.UserQuota{
+			Quota: &s3v1alpha1.UserQuota{
 				MaxSize:    r.s3UserClaim.Spec.Quota.MaxSize,
 				MaxObjects: r.s3UserClaim.Spec.Quota.MaxObjects,
 			},
@@ -314,8 +314,8 @@ func (r *Reconciler) assembleAdminSecret() *v1.Secret {
 			Name:      r.s3UserClaim.Spec.AdminSecret,
 		},
 		Data: map[string][]byte{
-			"accessKey": []byte(r.cephUser.Keys[0].AccessKey),
-			"secretKey": []byte(r.cephUser.Keys[0].SecretKey),
+			consts.DataKeyAccessKey: []byte(r.cephUser.Keys[0].AccessKey),
+			consts.DataKeySecretKey: []byte(r.cephUser.Keys[0].SecretKey),
 		},
 	}
 }

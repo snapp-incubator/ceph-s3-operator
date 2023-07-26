@@ -21,7 +21,7 @@ type Config struct {
 }
 
 var (
-	defaultConfig = Config{
+	DefaultConfig = Config{
 		S3UserClass:                     "ceph-default",
 		ClusterName:                     "okd4-main",
 		ValidationWebhookTimeoutSeconds: 10,
@@ -38,7 +38,7 @@ func GetConfig(configPath string) (*Config, error) {
 	parser := yaml.Parser()
 	cfg := &Config{}
 
-	if err := k.Load(structs.Provider(defaultConfig, "koanf"), nil); err != nil {
+	if err := k.Load(structs.Provider(DefaultConfig, "koanf"), nil); err != nil {
 		return nil, err
 	}
 
