@@ -15,10 +15,28 @@ spec:
     singular: s3user
   scope: Cluster
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - jsonPath: .spec.s3UserClass
+      name: S3USERCLASS
+      type: string
+    - jsonPath: .spec.claimRef.namespace
+      name: CLAIM NS
+      type: string
+    - jsonPath: .spec.claimRef.name
+      name: CLAIM NAME
+      type: string
+    - jsonPath: .spec.quota.maxObjects
+      name: MAX OBJECTS
+      type: string
+    - jsonPath: .spec.quota.maxSize
+      name: MAX SIZE
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: AGE
+      type: date
+    name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: S3User is the Schema for the s3users API
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation

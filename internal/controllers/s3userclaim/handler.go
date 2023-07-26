@@ -56,8 +56,9 @@ type Reconciler struct {
 	s3UserClaim          *s3v1alpha1.S3UserClaim
 	cephUser             *admin.User
 	cephTenant           string
-	cephDisplayName      string
 	cephUserId           string
+	fullCephUserId       string
+	cephDisplayName      string
 	s3UserName           string
 
 	// configurations
@@ -108,6 +109,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	subrecs := []subreconciler.Fn{
 		r.initVars,
 		r.ensureCephUser,
+		r.ensureCephUserQuota,
 		r.ensureAdminSecret,
 		r.ensureS3User,
 		r.updateS3UserClaimStatus,
@@ -129,6 +131,9 @@ func (r *Reconciler) initVars(context.Context) (*ctrl.Result, error) {
 	clusterName := k8sNameSpecialChars.ReplaceAllString(r.clusterName, "_")
 	r.cephTenant = fmt.Sprintf("%s__%s", clusterName, namespace)
 	r.cephUserId = r.s3UserClaim.Name
+	// Ceph-SDK functions that involve retrieving the user such as GetQuota, GetUser and even SetUser,
+	// required tenant name in UID field.
+	r.fullCephUserId = fmt.Sprintf("%s$%s", r.cephTenant, r.cephUserId)
 	r.cephDisplayName = fmt.Sprintf("%s in %s.%s", r.s3UserClaim.Name, r.s3UserClaim.Namespace, r.clusterName)
 
 	r.s3UserName = fmt.Sprintf("%s.%s", r.s3UserClaim.Namespace, r.s3UserClaim.Name)
@@ -138,30 +143,13 @@ func (r *Reconciler) initVars(context.Context) (*ctrl.Result, error) {
 
 func (r *Reconciler) ensureCephUser(ctx context.Context) (*ctrl.Result, error) {
 	desiredUser := admin.User{
-		// Embed tenant name in the ID field instead of setting Tenant field explicitly because
-		// GetUser requires Tenant inside ID for retrieving the user
-		ID:          fmt.Sprintf("%s$%s", r.cephTenant, r.cephUserId),
+		ID:          r.fullCephUserId,
 		DisplayName: r.cephDisplayName,
-		UserQuota: admin.QuotaSpec{
-			QuotaType:  consts.QuotaTypeUser,
-			Enabled:    pointer.Bool(true),
-			MaxSize:    pointer.Int64(r.s3UserClaim.Spec.Quota.MaxSize.Value()),
-			MaxObjects: pointer.Int64(r.s3UserClaim.Spec.Quota.MaxObjects.Value()),
-		},
 	}
 
 	switch exitingUser, err := r.rgwClient.GetUser(ctx, &desiredUser); {
 	case err == nil:
-		if exitingUser.UserQuota.MaxSize != desiredUser.UserQuota.MaxSize || exitingUser.UserQuota.MaxObjects != desiredUser.UserQuota.MaxObjects {
-			updatedUser, err := r.rgwClient.ModifyUser(ctx, &desiredUser)
-			if err != nil {
-				r.logger.Error(err, "failed to update ceph user")
-				return subreconciler.Requeue()
-			}
-			r.cephUser = updatedUser
-		} else {
-			r.cephUser = exitingUser
-		}
+		r.cephUser = exitingUser
 	case errors.Is(err, admin.ErrNoSuchUser):
 		user, err := r.rgwClient.CreateUser(ctx, &desiredUser)
 		if err != nil {
@@ -181,6 +169,36 @@ func (r *Reconciler) ensureCephUser(ctx context.Context) (*ctrl.Result, error) {
 	}
 
 	return subreconciler.ContinueReconciling()
+}
+
+func (r *Reconciler) ensureCephUserQuota(ctx context.Context) (*ctrl.Result, error) {
+	desiredQuota := &admin.QuotaSpec{
+		UID:        r.fullCephUserId,
+		QuotaType:  consts.QuotaTypeUser,
+		Enabled:    pointer.Bool(true),
+		MaxSize:    pointer.Int64(r.s3UserClaim.Spec.Quota.MaxSize.Value()),
+		MaxObjects: pointer.Int64(r.s3UserClaim.Spec.Quota.MaxObjects.Value()),
+	}
+
+	switch existingQuota, err := r.rgwClient.GetQuota(ctx, desiredQuota); {
+	case err == nil:
+		// We need to compare field by field. DeepEqual won't work here as the retrieved quota doesn't have all
+		// the fields set to their real value (e.g. UID will be empty although the real user has UID)
+		if *existingQuota.Enabled != *desiredQuota.Enabled ||
+			*existingQuota.MaxSize != *desiredQuota.MaxSize ||
+			*existingQuota.MaxObjects != *desiredQuota.MaxObjects {
+			if err := r.rgwClient.SetQuota(ctx, desiredQuota); err != nil {
+				r.logger.Error(err, "failed to set user quota", "userId", desiredQuota.UID)
+				return subreconciler.Requeue()
+			}
+		}
+
+		r.cephUser.UserQuota = *desiredQuota
+		return subreconciler.ContinueReconciling()
+	default:
+		r.logger.Error(err, "failed to get user quota")
+		return subreconciler.Requeue()
+	}
 }
 
 func (r *Reconciler) ensureAdminSecret(ctx context.Context) (*ctrl.Result, error) {
@@ -257,7 +275,7 @@ func (r *Reconciler) updateS3UserClaimStatus(ctx context.Context) (*ctrl.Result,
 
 	if !apiequality.Semantic.DeepEqual(r.s3UserClaim.Status, status) {
 		r.s3UserClaim.Status = status
-		if err := r.Update(ctx, r.s3UserClaim); err != nil {
+		if err := r.Status().Update(ctx, r.s3UserClaim); err != nil {
 			r.logger.Error(err, "failed to update s3 user claim")
 			return subreconciler.Requeue()
 		}

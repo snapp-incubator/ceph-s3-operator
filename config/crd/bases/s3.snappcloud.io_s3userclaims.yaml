@@ -15,10 +15,25 @@ spec:
     singular: s3userclaim
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - jsonPath: .spec.s3UserClass
+      name: S3USERCLASS
+      type: string
+    - jsonPath: .status.s3UserName
+      name: S3USER
+      type: string
+    - jsonPath: .status.quota.maxObjects
+      name: MAX OBJECTS
+      type: string
+    - jsonPath: .status.quota.maxSize
+      name: MAX SIZE
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: AGE
+      type: date
+    name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: S3UserClaim is the Schema for the s3userclaims API
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -86,8 +101,6 @@ spec:
                 type: object
               s3UserName:
                 type: string
-            required:
-            - s3UserName
             type: object
         type: object
     served: true

@@ -40,8 +40,13 @@ type S3UserStatus struct {
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 //+kubebuilder:resource:scope=Cluster
+// +kubebuilder:printcolumn:name="S3USERCLASS",type=string,JSONPath=`.spec.s3UserClass`
+// +kubebuilder:printcolumn:name="CLAIM NS",type=string,JSONPath=`.spec.claimRef.namespace`
+// +kubebuilder:printcolumn:name="CLAIM NAME",type=string,JSONPath=`.spec.claimRef.name`
+// +kubebuilder:printcolumn:name="MAX OBJECTS",type=string,JSONPath=`.spec.quota.maxObjects`
+// +kubebuilder:printcolumn:name="MAX SIZE",type=string,JSONPath=`.spec.quota.maxSize`
+// +kubebuilder:printcolumn:name="AGE",type=date,JSONPath=`.metadata.creationTimestamp`
 
-// S3User is the Schema for the s3users API
 type S3User struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

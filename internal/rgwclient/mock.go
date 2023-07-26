@@ -14,12 +14,17 @@ func NewMockRgwClient() *MockRgwClient {
 
 var _ RgwClient = &MockRgwClient{}
 
-func (mrc *MockRgwClient) GetUser(ctx context.Context, user *admin.User) (*admin.User, error) {
+func (mrc *MockRgwClient) GetQuota(ctx context.Context, quotaSpec *admin.QuotaSpec) (*admin.QuotaSpec, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
-func (mrc *MockRgwClient) ModifyUser(ctx context.Context, user *admin.User) (*admin.User, error) {
+func (mrc *MockRgwClient) SetQuota(ctx context.Context, quotaSpec *admin.QuotaSpec) error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (mrc *MockRgwClient) GetUser(ctx context.Context, user *admin.User) (*admin.User, error) {
 	//TODO implement me
 	panic("implement me")
 }

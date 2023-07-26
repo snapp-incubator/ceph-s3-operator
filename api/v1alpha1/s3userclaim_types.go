@@ -40,14 +40,18 @@ type S3UserClaimStatus struct {
 	// +kubebuilder:validation:Optional
 	Quota *UserQuota `json:"quota,omitempty"`
 
-	// +kubebuilder:validation:Required
-	S3UserName string `json:"s3UserName"`
+	// +kubebuilder:validation:Optional
+	S3UserName string `json:"s3UserName,omitempty"`
 }
 
-//+kubebuilder:object:root=true
-//+kubebuilder:subresource:status
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="S3USERCLASS",type=string,JSONPath=`.spec.s3UserClass`
+// +kubebuilder:printcolumn:name="S3USER",type=string,JSONPath=`.status.s3UserName`
+// +kubebuilder:printcolumn:name="MAX OBJECTS",type=string,JSONPath=`.status.quota.maxObjects`
+// +kubebuilder:printcolumn:name="MAX SIZE",type=string,JSONPath=`.status.quota.maxSize`
+// +kubebuilder:printcolumn:name="AGE",type=date,JSONPath=`.metadata.creationTimestamp`
 
-// S3UserClaim is the Schema for the s3userclaims API
 type S3UserClaim struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -56,7 +60,7 @@ type S3UserClaim struct {
 	Status S3UserClaimStatus `json:"status,omitempty"`
 }
 
-//+kubebuilder:object:root=true
+// +kubebuilder:object:root=true
 
 // S3UserClaimList contains a list of S3UserClaim
 type S3UserClaimList struct {
