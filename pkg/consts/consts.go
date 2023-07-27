@@ -14,4 +14,7 @@ const (
 	DataKeySecretKey = "secretKey"
 
 	CephKeyTypeS3 = "s3"
+
+	ExceededClusterQuotaErrMessage   = "exceeded cluster quota"
+	ExceededNamespaceQuotaErrMessage = "exceeded namespace quota"
 )

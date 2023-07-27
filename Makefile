@@ -63,6 +63,9 @@ endif
 SHELL = /usr/bin/env bash -o pipefail
 .SHELLFLAGS = -ec
 
+# set this to any value other than false to setup webhooks when running the controller
+export ENABLE_WEBHOOKS ?= false
+
 .PHONY: all
 all: build
 

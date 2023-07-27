@@ -119,18 +119,16 @@ func validateQuota(suc *S3UserClaim) field.ErrorList {
 		// todo: fix error message
 		errorList = append(errorList, field.InternalError(quotaFieldPath, errors.New("")))
 	} else if exceeded {
-		errorList = append(errorList, field.Forbidden(quotaFieldPath, "exceeded quota"))
+		errorList = append(errorList, field.Forbidden(quotaFieldPath, consts.ExceededNamespaceQuotaErrMessage))
 	}
 
 	exceeded, err = validateAgainstClusterQuota(ctx, suc)
 	if err != nil {
-		if err != nil {
-			s3userclaimlog.Error(err, "failed to validate against cluster quota")
-			// todo: fix error message
-			errorList = append(errorList, field.InternalError(quotaFieldPath, errors.New("")))
-		} else if exceeded {
-			errorList = append(errorList, field.Forbidden(quotaFieldPath, "exceeded quota"))
-		}
+		s3userclaimlog.Error(err, "failed to validate against cluster quota")
+		// todo: fix error message
+		errorList = append(errorList, field.InternalError(quotaFieldPath, errors.New("")))
+	} else if exceeded {
+		errorList = append(errorList, field.Forbidden(quotaFieldPath, consts.ExceededClusterQuotaErrMessage))
 	}
 
 	return errorList

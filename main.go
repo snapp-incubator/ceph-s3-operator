@@ -128,10 +128,12 @@ func main() {
 	}
 
 	// Setup webhooks
-	s3v1alpha1.ValidationTimeout = time.Duration(cfg.ValidationWebhookTimeoutSeconds) * time.Second
-	if err = (&s3v1alpha1.S3UserClaim{}).SetupWebhookWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create webhook", "webhook", "S3UserClaim")
-		os.Exit(1)
+	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
+		s3v1alpha1.ValidationTimeout = time.Duration(cfg.ValidationWebhookTimeoutSeconds) * time.Second
+		if err = (&s3v1alpha1.S3UserClaim{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "S3UserClaim")
+			os.Exit(1)
+		}
 	}
 	//+kubebuilder:scaffold:builder
 

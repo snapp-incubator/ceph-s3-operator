@@ -105,16 +105,16 @@ var _ = Describe("S3UserClaim Controller", func() {
 		})
 
 		It("Should create Ceph user", func() {
+			k8sNameSpecialChars := regexp.MustCompile(`[.-]`)
+			initialUser := admin.User{
+				ID: fmt.Sprintf(
+					"%s__%s$%s",
+					k8sNameSpecialChars.ReplaceAllString(cfg.ClusterName, "_"),
+					k8sNameSpecialChars.ReplaceAllString(s3UserClaimNamespace, "_"),
+					s3UserClaim.Name,
+				),
+			}
 			Eventually(func(g Gomega) {
-				k8sNameSpecialChars := regexp.MustCompile(`[.-]`)
-				initialUser := admin.User{
-					ID: fmt.Sprintf(
-						"%s__%s$%s",
-						k8sNameSpecialChars.ReplaceAllString(cfg.ClusterName, "_"),
-						k8sNameSpecialChars.ReplaceAllString(s3UserClaimNamespace, "_"),
-						s3UserClaim.Name,
-					),
-				}
 				gotUser, err := rgwClient.GetUser(ctx, initialUser)
 				g.Expect(err).NotTo(HaveOccurred())
 
