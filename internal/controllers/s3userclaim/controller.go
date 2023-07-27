@@ -1,6 +1,7 @@
 package s3userclaim
 
 import (
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/builder"
@@ -22,6 +23,7 @@ func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 		Watches(
 			&source.Kind{Type: &s3v1alpha1.S3User{}},
 			handler.EnqueueRequestsFromMapFunc(s3UsertoS3UserClaim)).
+		Owns(&v1.Secret{}).
 		Complete(r)
 }
 

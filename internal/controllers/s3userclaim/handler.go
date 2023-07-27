@@ -21,6 +21,7 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"strings"
 
 	"github.com/ceph/go-ceph/rgw/admin"
 	"github.com/go-logr/logr"
@@ -32,6 +33,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	genericregistry "k8s.io/apiserver/pkg/registry/generic/registry"
 	"k8s.io/client-go/tools/reference"
 	"k8s.io/utils/pointer"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -52,14 +54,16 @@ type Reconciler struct {
 	rgwClient rgwclient.RgwClient
 
 	// reconcile specific variables
-	clusterResourceQuota *openshiftquota.ClusterResourceQuota
-	s3UserClaim          *s3v1alpha1.S3UserClaim
-	cephUser             *admin.User
-	cephTenant           string
-	cephUserId           string
-	fullCephUserId       string
-	cephDisplayName      string
-	s3UserName           string
+	clusterResourceQuota   *openshiftquota.ClusterResourceQuota
+	s3UserClaim            *s3v1alpha1.S3UserClaim
+	cephUser               admin.User
+	cephTenant             string
+	cephUserId             string
+	cephUserFullId         string
+	cephDisplayName        string
+	s3UserName             string
+	readonlyCephUserId     string
+	readonlyCephUserFullId string
 
 	// configurations
 	clusterName  string
@@ -110,7 +114,11 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		r.initVars,
 		r.ensureCephUser,
 		r.ensureCephUserQuota,
+		r.ensureReadonlySubuser,
+		// retrieve the ceph user to have keys of subuser at hand
+		r.retrieveCephUser,
 		r.ensureAdminSecret,
+		r.ensureReadonlySecret,
 		r.ensureS3User,
 		r.updateS3UserClaimStatus,
 	}
@@ -133,8 +141,11 @@ func (r *Reconciler) initVars(context.Context) (*ctrl.Result, error) {
 	r.cephUserId = r.s3UserClaim.Name
 	// Ceph-SDK functions that involve retrieving the user such as GetQuota, GetUser and even SetUser,
 	// required tenant name in UID field.
-	r.fullCephUserId = fmt.Sprintf("%s$%s", r.cephTenant, r.cephUserId)
+	r.cephUserFullId = fmt.Sprintf("%s$%s", r.cephTenant, r.cephUserId)
 	r.cephDisplayName = fmt.Sprintf("%s in %s.%s", r.s3UserClaim.Name, r.s3UserClaim.Namespace, r.clusterName)
+
+	r.readonlyCephUserId = "readonly"
+	r.readonlyCephUserFullId = fmt.Sprintf("%s:%s", r.cephUserFullId, r.readonlyCephUserId)
 
 	r.s3UserName = fmt.Sprintf("%s.%s", r.s3UserClaim.Namespace, r.s3UserClaim.Name)
 
@@ -143,15 +154,15 @@ func (r *Reconciler) initVars(context.Context) (*ctrl.Result, error) {
 
 func (r *Reconciler) ensureCephUser(ctx context.Context) (*ctrl.Result, error) {
 	desiredUser := admin.User{
-		ID:          r.fullCephUserId,
+		ID:          r.cephUserFullId,
 		DisplayName: r.cephDisplayName,
 	}
 
-	switch exitingUser, err := r.rgwClient.GetUser(ctx, &desiredUser); {
+	switch exitingUser, err := r.rgwClient.GetUser(ctx, desiredUser); {
 	case err == nil:
 		r.cephUser = exitingUser
 	case errors.Is(err, admin.ErrNoSuchUser):
-		user, err := r.rgwClient.CreateUser(ctx, &desiredUser)
+		user, err := r.rgwClient.CreateUser(ctx, desiredUser)
 		if err != nil {
 			r.logger.Error(err, "failed to create ceph user", "userId", desiredUser.ID)
 			return subreconciler.Requeue()
@@ -162,18 +173,12 @@ func (r *Reconciler) ensureCephUser(ctx context.Context) (*ctrl.Result, error) {
 		return subreconciler.Requeue()
 	}
 
-	// TODO: What should be done here? Requeueing won't help. Emit an event or increasing a prometheus counter :-?
-	if len(r.cephUser.Keys) == 0 {
-		err := fmt.Errorf("ceph user doesn't have any keys")
-		r.logger.Error(err, "")
-	}
-
 	return subreconciler.ContinueReconciling()
 }
 
 func (r *Reconciler) ensureCephUserQuota(ctx context.Context) (*ctrl.Result, error) {
-	desiredQuota := &admin.QuotaSpec{
-		UID:        r.fullCephUserId,
+	desiredQuota := admin.QuotaSpec{
+		UID:        r.cephUserFullId,
 		QuotaType:  consts.QuotaTypeUser,
 		Enabled:    pointer.Bool(true),
 		MaxSize:    pointer.Int64(r.s3UserClaim.Spec.Quota.MaxSize.Value()),
@@ -193,7 +198,7 @@ func (r *Reconciler) ensureCephUserQuota(ctx context.Context) (*ctrl.Result, err
 			}
 		}
 
-		r.cephUser.UserQuota = *desiredQuota
+		r.cephUser.UserQuota = desiredQuota
 		return subreconciler.ContinueReconciling()
 	default:
 		r.logger.Error(err, "failed to get user quota")
@@ -201,29 +206,76 @@ func (r *Reconciler) ensureCephUserQuota(ctx context.Context) (*ctrl.Result, err
 	}
 }
 
-func (r *Reconciler) ensureAdminSecret(ctx context.Context) (*ctrl.Result, error) {
-	adminSecret := &v1.Secret{}
+func (r *Reconciler) ensureReadonlySubuser(ctx context.Context) (*ctrl.Result, error) {
+	desiredSubuser := admin.SubuserSpec{
+		Name:    r.readonlyCephUserId,
+		Access:  admin.SubuserAccessRead,
+		KeyType: pointer.String(consts.CephKeyTypeS3),
+	}
 
-	switch err := r.Get(
-		ctx,
-		types.NamespacedName{Namespace: r.s3UserClaim.Namespace, Name: r.s3UserClaim.Spec.AdminSecret},
-		adminSecret,
-	); {
+	for _, subuser := range r.cephUser.Subusers {
+		if subuser.Name == r.readonlyCephUserFullId {
+			return subreconciler.ContinueReconciling()
+		}
+	}
+
+	if err := r.rgwClient.CreateSubuser(ctx, admin.User{ID: r.cephUserFullId}, desiredSubuser); err != nil {
+		r.logger.Error(err, "failed to create subuser")
+		return subreconciler.Requeue()
+	}
+	return subreconciler.ContinueReconciling()
+}
+
+func (r *Reconciler) retrieveCephUser(ctx context.Context) (*ctrl.Result, error) {
+	retrievedUser, err := r.rgwClient.GetUser(ctx, admin.User{ID: r.cephUserFullId})
+	if err != nil {
+		r.logger.Error(err, "failed to retrieve ceph user")
+		return subreconciler.Requeue()
+	}
+
+	r.cephUser = retrievedUser
+	return subreconciler.ContinueReconciling()
+}
+
+func (r *Reconciler) ensureAdminSecret(ctx context.Context) (*ctrl.Result, error) {
+	assembledSecret, err := r.assembleCephUserSecret(r.cephUserFullId, r.s3UserClaim.Spec.AdminSecret)
+	if err != nil {
+		r.logger.Error(err, "failed to assemble admin secret")
+		return subreconciler.Requeue()
+	}
+	return r.ensureSecret(ctx, assembledSecret)
+}
+
+func (r *Reconciler) ensureReadonlySecret(ctx context.Context) (*ctrl.Result, error) {
+	assembledSecret, err := r.assembleCephUserSecret(r.readonlyCephUserFullId, r.s3UserClaim.Spec.ReadonlySecret)
+	if err != nil {
+		r.logger.Error(err, "failed to assemble readonly secret")
+		return subreconciler.Requeue()
+	}
+	return r.ensureSecret(ctx, assembledSecret)
+}
+
+// ensureSecret ensures the passed secret exists and is controlled by r.s3UserClaim
+func (r *Reconciler) ensureSecret(ctx context.Context, secret *v1.Secret) (*ctrl.Result, error) {
+	existingSecret := &v1.Secret{}
+	switch err := r.Get(ctx, types.NamespacedName{Namespace: secret.Namespace, Name: secret.Name}, existingSecret); {
 	case apierrors.IsNotFound(err):
-		secret := r.assembleAdminSecret()
 		if err := r.Create(ctx, secret); err != nil {
-			r.logger.Error(err, "failed to create admin secret")
+			r.logger.Error(err, "failed to create secret", "name", secret.Name)
 			return subreconciler.Requeue()
 		}
 	case err != nil:
-		r.logger.Error(err, "failed to get admin secret")
+		r.logger.Error(err, "failed to get secret", "name", secret.Name)
 		return subreconciler.Requeue()
 	default:
-		secret := r.assembleAdminSecret()
-		if !apiequality.Semantic.DeepEqual(adminSecret.Data, secret.Data) {
-			adminSecret.Data = secret.Data
-			if err := r.Update(ctx, adminSecret); err != nil {
-				r.logger.Error(err, "failed to update admin secret")
+		if !apiequality.Semantic.DeepEqual(existingSecret.Data, secret.Data) ||
+			!metav1.IsControlledBy(existingSecret, r.s3UserClaim) {
+			existingSecret.Data = secret.Data
+			if err := ctrl.SetControllerReference(r.s3UserClaim, existingSecret, r.scheme); err != nil {
+				return nil, err
+			}
+			if err := r.Update(ctx, existingSecret); err != nil {
+				r.logger.Error(err, "failed to update secret", "name", secret.Name)
 				return subreconciler.Requeue()
 			}
 		}
@@ -276,7 +328,11 @@ func (r *Reconciler) updateS3UserClaimStatus(ctx context.Context) (*ctrl.Result,
 	if !apiequality.Semantic.DeepEqual(r.s3UserClaim.Status, status) {
 		r.s3UserClaim.Status = status
 		if err := r.Status().Update(ctx, r.s3UserClaim); err != nil {
-			r.logger.Error(err, "failed to update s3 user claim")
+			if strings.Contains(err.Error(), genericregistry.OptimisticLockErrorMsg) {
+				r.logger.Info("re-queuing item due to optimistic locking on resource", "error", err.Error())
+			} else {
+				r.logger.Error(err, "failed to update s3 user claim")
+			}
 			return subreconciler.Requeue()
 		}
 	}
@@ -307,15 +363,35 @@ func (r *Reconciler) assembleS3User() (*s3v1alpha1.S3User, error) {
 	return s3user, nil
 }
 
-func (r *Reconciler) assembleAdminSecret() *v1.Secret {
-	return &v1.Secret{
+// assembleCephUserSecret tries to find a key for the given userName and assembles a secret
+// with accessKey and secretKey of the found key
+func (r *Reconciler) assembleCephUserSecret(userName, secretName string) (*v1.Secret, error) {
+	var existingKey *admin.UserKeySpec
+	for _, key := range r.cephUser.Keys {
+		if key.User == userName {
+			existingKey = &key
+			break
+		}
+	}
+
+	if existingKey == nil {
+		return nil, fmt.Errorf("no key found for user %s", userName)
+	}
+
+	secret := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace: r.s3UserClaim.Namespace,
-			Name:      r.s3UserClaim.Spec.AdminSecret,
+			Name:      secretName,
 		},
 		Data: map[string][]byte{
-			consts.DataKeyAccessKey: []byte(r.cephUser.Keys[0].AccessKey),
-			consts.DataKeySecretKey: []byte(r.cephUser.Keys[0].SecretKey),
+			consts.DataKeyAccessKey: []byte(existingKey.AccessKey),
+			consts.DataKeySecretKey: []byte(existingKey.SecretKey),
 		},
 	}
+
+	if err := ctrl.SetControllerReference(r.s3UserClaim, secret, r.scheme); err != nil {
+		return nil, err
+	}
+
+	return secret, nil
 }

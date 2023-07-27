@@ -18,7 +18,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"os"
 	"time"
 
@@ -79,7 +78,6 @@ func main() {
 
 	cfg, err := config.GetConfig(configPath)
 	if err != nil {
-		fmt.Println(err)
 		setupLog.Error(err, "failed to get config")
 		os.Exit(1)
 	}

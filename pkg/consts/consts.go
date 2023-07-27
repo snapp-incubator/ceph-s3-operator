@@ -12,4 +12,6 @@ const (
 
 	DataKeyAccessKey = "accessKey"
 	DataKeySecretKey = "secretKey"
+
+	CephKeyTypeS3 = "s3"
 )

@@ -42,10 +42,14 @@ var _ = Describe("S3UserClaim Controller", func() {
 				s3UserClaimName,
 			),
 		}
-		rgwClient   *admin.API
-		s3UserClaim *s3v1alpha1.S3UserClaim
-		s3User      *s3v1alpha1.S3User
-		adminSecret *v1.Secret
+		readonlyCephUser = admin.SubuserSpec{
+			Name: fmt.Sprintf("%s:%s", cephUser.ID, "readonly"),
+		}
+		rgwClient      *admin.API
+		s3UserClaim    *s3v1alpha1.S3UserClaim
+		s3User         *s3v1alpha1.S3User
+		adminSecret    *v1.Secret
+		readonlySecret *v1.Secret
 	)
 
 	co, err := admin.New(cfg.Rgw.Endpoint, cfg.Rgw.AccessKey, cfg.Rgw.SecretKey, nil)
@@ -82,6 +86,13 @@ var _ = Describe("S3UserClaim Controller", func() {
 					Namespace: s3UserClaimNamespace,
 				},
 			}
+
+			readonlySecret = &v1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      readonlySecretName,
+					Namespace: s3UserClaimNamespace,
+				},
+			}
 			Expect(k8sClient.Create(ctx, s3UserClaim)).To(Succeed())
 		})
 
@@ -89,6 +100,7 @@ var _ = Describe("S3UserClaim Controller", func() {
 			Expect(k8sClient.Delete(ctx, s3UserClaim)).To(Succeed())
 			Expect(k8sClient.Delete(ctx, s3User)).To(Succeed())
 			Expect(k8sClient.Delete(ctx, adminSecret)).To(Succeed())
+			Expect(k8sClient.Delete(ctx, readonlySecret)).To(Succeed())
 			Expect(rgwClient.RemoveUser(ctx, cephUser)).To(Succeed())
 		})
 
@@ -116,20 +128,46 @@ var _ = Describe("S3UserClaim Controller", func() {
 
 		It("Should create admin secret", func() {
 			Eventually(func(g Gomega) {
-				err := k8sClient.Get(
+				g.Expect(k8sClient.Get(
 					ctx,
 					types.NamespacedName{Name: adminSecretName, Namespace: s3UserClaimNamespace},
 					adminSecret,
-				)
-				g.Expect(err).NotTo(HaveOccurred())
+				)).To(Succeed())
+
+				g.Expect(metav1.IsControlledBy(adminSecret, s3UserClaim)).To(BeTrue())
 
 				gotCephUser, err := rgwClient.GetUser(ctx, cephUser)
 				g.Expect(err).NotTo(HaveOccurred())
 
 				g.Expect(len(gotCephUser.Keys)).NotTo(BeZero())
 
-				g.Expect(adminSecret.Data[consts.DataKeyAccessKey]).To(Equal([]byte(gotCephUser.Keys[0].AccessKey)))
-				g.Expect(adminSecret.Data[consts.DataKeySecretKey]).To(Equal([]byte(gotCephUser.Keys[0].SecretKey)))
+				g.Expect(gotCephUser.Keys).To(ContainElement(admin.UserKeySpec{
+					User:      cephUser.ID,
+					AccessKey: string(adminSecret.Data[consts.DataKeyAccessKey]),
+					SecretKey: string(adminSecret.Data[consts.DataKeySecretKey]),
+				}))
+			}).WithTimeout(5 * time.Second).WithPolling(time.Second).Should(Succeed())
+		})
+
+		It("Should create readonly secret", func() {
+			Eventually(func(g Gomega) {
+				g.Expect(k8sClient.Get(
+					ctx,
+					types.NamespacedName{Name: readonlySecretName, Namespace: s3UserClaimNamespace},
+					readonlySecret,
+				)).To(Succeed())
+
+				g.Expect(metav1.IsControlledBy(readonlySecret, s3UserClaim)).To(BeTrue())
+
+				gotCephUser, err := rgwClient.GetUser(ctx, cephUser)
+				g.Expect(err).NotTo(HaveOccurred())
+
+				g.Expect(len(gotCephUser.Keys)).To(BeNumerically("==", 2))
+				g.Expect(gotCephUser.Keys).To(ContainElement(admin.UserKeySpec{
+					User:      readonlyCephUser.Name,
+					AccessKey: string(readonlySecret.Data[consts.DataKeyAccessKey]),
+					SecretKey: string(readonlySecret.Data[consts.DataKeySecretKey]),
+				}))
 			}).WithTimeout(5 * time.Second).WithPolling(time.Second).Should(Succeed())
 		})
 
