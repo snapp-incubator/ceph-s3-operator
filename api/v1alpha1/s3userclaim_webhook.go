@@ -85,7 +85,7 @@ func (suc *S3UserClaim) ValidateUpdate(old runtime.Object) error {
 	if suc.Spec.S3UserClass != oldS3UserClaim.Spec.S3UserClass {
 		allErrs = append(
 			allErrs,
-			field.Forbidden(field.NewPath("spec").Child("s3UserClass"), "s3UserClass is immutable"),
+			field.Forbidden(field.NewPath("spec").Child("s3UserClass"), consts.S3UserClassImmutableErrMessage),
 		)
 	}
 
@@ -145,13 +145,13 @@ func validateAgainstNamespaceQuota(ctx context.Context, suc *S3UserClaim) (bool,
 	totalMaxObjects := resource.Quantity{}
 	totalMaxSize := resource.Quantity{}
 	for _, claim := range s3UserClaimList.Items {
-		if claim.ObjectMeta.Name != suc.ObjectMeta.Name {
+		if claim.Name != suc.Name {
 			totalMaxObjects.Add(claim.Spec.Quota.MaxObjects)
 			totalMaxSize.Add(claim.Spec.Quota.MaxSize)
 		}
 	}
 	totalMaxObjects.Add(suc.Spec.Quota.MaxObjects)
-	totalMaxSize.Add(suc.Spec.Quota.MaxObjects)
+	totalMaxSize.Add(suc.Spec.Quota.MaxSize)
 
 	// List all quotas in the namespace and validate against them
 	resourceQuotaList := &v1.ResourceQuotaList{}
@@ -190,6 +190,9 @@ func validateAgainstClusterQuota(ctx context.Context, suc *S3UserClaim) (bool, e
 	totalMaxObjects := resource.Quantity{}
 	totalMaxSize := resource.Quantity{}
 	namespaces, err := findTeamNamespaces(ctx, team)
+	if err != nil {
+		return false, fmt.Errorf("failed to find team namespaces, %w", err)
+	}
 	for _, ns := range namespaces {
 		s3UserClaimList := &S3UserClaimList{}
 		if err := runtimeClient.List(ctx, s3UserClaimList, client.InNamespace(ns)); err != nil {
@@ -197,14 +200,14 @@ func validateAgainstClusterQuota(ctx context.Context, suc *S3UserClaim) (bool, e
 		}
 
 		for _, claim := range s3UserClaimList.Items {
-			if claim.ObjectMeta.Namespace != suc.ObjectMeta.Namespace && claim.ObjectMeta.Name != suc.ObjectMeta.Name {
+			if claim.Name != suc.Name || claim.Namespace != suc.Namespace {
 				totalMaxObjects.Add(claim.Spec.Quota.MaxObjects)
 				totalMaxSize.Add(claim.Spec.Quota.MaxSize)
 			}
 		}
 	}
 	totalMaxObjects.Add(suc.Spec.Quota.MaxObjects)
-	totalMaxSize.Add(suc.Spec.Quota.MaxObjects)
+	totalMaxSize.Add(suc.Spec.Quota.MaxSize)
 
 	// Validate against clusterResourceQuota
 	if maxObjects, ok := clusterQuota.Spec.Quota.Hard[consts.ResourceNameS3MaxObjects]; ok {

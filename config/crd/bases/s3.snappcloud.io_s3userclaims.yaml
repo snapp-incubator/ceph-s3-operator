@@ -53,6 +53,9 @@ spec:
               adminSecret:
                 type: string
               quota:
+                default:
+                  maxObjects: "5368709120"
+                  maxSize: "1000"
                 description: UserQuota specifies the quota for a user in Ceph
                 properties:
                   maxObjects:

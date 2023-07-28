@@ -17,4 +17,5 @@ const (
 
 	ExceededClusterQuotaErrMessage   = "exceeded cluster quota"
 	ExceededNamespaceQuotaErrMessage = "exceeded namespace quota"
+	S3UserClassImmutableErrMessage   = "s3UserClass is immutable"
 )

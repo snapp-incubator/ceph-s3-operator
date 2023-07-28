@@ -85,8 +85,7 @@ var _ = BeforeSuite(func() {
 	Expect(clientgoscheme.AddToScheme(scheme)).To(Succeed())
 	Expect(AddToScheme(scheme)).To(Succeed())
 
-	err = admissionv1beta1.AddToScheme(scheme)
-	Expect(err).NotTo(HaveOccurred())
+	Expect(admissionv1beta1.AddToScheme(scheme)).To(Succeed())
 
 	//+kubebuilder:scaffold:scheme
 
