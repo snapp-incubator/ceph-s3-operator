@@ -49,4 +49,7 @@ status:
 We follow [Kubebuilder](https://github.com/kubernetes-sigs/kubebuilder/blob/master/DESIGN.md#development) developement
 principles, Specifically about testing in an environment similar to the real world and avoiding mocks as much as possible.
 
-For example, we don't mock RGW API. Instead, we use a simliar approach to what [go-ceph](https://github.com/ceph/go-ceph/) does. 
+For example, we don't mock RGW API. Instead, we use a simliar approach to what [go-ceph](https://github.com/ceph/go-ceph/) does.
+
+### Building the testing image
+TESTING_IMAGE_TAG=<desired_tag> make build-testing-image

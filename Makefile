@@ -63,8 +63,11 @@ endif
 SHELL = /usr/bin/env bash -o pipefail
 .SHELLFLAGS = -ec
 
-# set this to any value other than false to setup webhooks when running the controller
+# Set this to any value other than false to setup webhooks when running the controller
 export ENABLE_WEBHOOKS ?= false
+
+# Tag for the docker image used as the Ceph cluster for tests
+TESTING_IMAGE_TAG ?= latest
 
 .PHONY: all
 all: build
@@ -262,11 +265,15 @@ catalog-build: opm ## Build a catalog image.
 catalog-push: ## Push a catalog image.
 	$(MAKE) docker-push IMG=$(CATALOG_IMG)
 
+.PHONY: build-testing-image
+build-testing-image:
+	docker build -t docker.io/spc35771/s3-operator-testing:$(TESTING_IMAGE_TAG) testing/
+
 .PHONY: setup-dev-env
 setup-dev-env:
 	-docker network create test_ceph_net
-	-docker run -p 8000:80 --rm -d --name test_ceph_a --hostname test_ceph_a --net test_ceph_net ceph-testing:v1.0.0
-	-docker run --rm -d --name test_ceph_b --hostname test_ceph_b --net test_ceph_net ceph-testing:v1.0.0
+	-docker run -p 8000:80 --rm -d --name test_ceph_a --hostname test_ceph_a --net test_ceph_net docker.io/spc35771/s3-operator-testing:$(TESTING_IMAGE_TAG)
+	-docker run --rm -d --name test_ceph_b --hostname test_ceph_b --net test_ceph_net docker.io/spc35771/s3-operator-testing:$(TESTING_IMAGE_TAG)
 	for i in {1..10}; do \
   		if docker logs --tail 2 test_ceph_a | grep "run sleep to keep container up" > /dev/null; then \
   		  break; \
