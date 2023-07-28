@@ -262,27 +262,20 @@ catalog-build: opm ## Build a catalog image.
 catalog-push: ## Push a catalog image.
 	$(MAKE) docker-push IMG=$(CATALOG_IMG)
 
-TEST_CTR_A=.run.test_ceph_a
-TEST_CTR_B=.run.test_ceph_b
-TEST_CTR_NET=.run.test_ceph_net
 .PHONY: setup-dev-env
 setup-dev-env:
 	-docker network create test_ceph_net
-	-docker run -p 8000:80 --cidfile=testing/.run.test_ceph_a --rm -d --name test_ceph_a \
-    		 --hostname test_ceph_a \
-    		--net test_ceph_net \
-    		-v test_ceph_a_data:/tmp/ceph ceph-testing:v1.0.0 \
-    		--test-run=NONE --pause
-	-docker run --cidfile=testing/.run.test_ceph_b --rm -d --name test_ceph_b \
-        		 --hostname test_ceph_b \
-        		--net test_ceph_net \
-        		-v test_ceph_b_data:/tmp/ceph ceph-testing:v1.0.0 \
-        		--test-run=NONE --pause
-	timeout 60 sh -c 'until docker logs --tail 2 test_ceph_a | grep "pausing execution" > /dev/null; do sleep 5; echo "\n\nwaiting for ceph setup...\n\n"; done'
+	-docker run -p 8000:80 --rm -d --name test_ceph_a --hostname test_ceph_a --net test_ceph_net ceph-testing:v1.0.0
+	-docker run --rm -d --name test_ceph_b --hostname test_ceph_b --net test_ceph_net ceph-testing:v1.0.0
+	for i in {1..10}; do \
+  		if docker logs --tail 2 test_ceph_a | grep "run sleep to keep container up" > /dev/null; then \
+  		  break; \
+  		fi; \
+  		sleep 5; \
+  		echo "------------waiting for ceph setup------------"; \
+	done
 
 .PHONY: teardown-dev-env
 teardown-dev-env:
 	docker rm -f test_ceph_a test_ceph_b
 	docker network rm test_ceph_net
-	rm testing/.run.test_ceph_a testing/.run.test_ceph_b
-	docker volume rm test_ceph_a_data test_ceph_b_data
