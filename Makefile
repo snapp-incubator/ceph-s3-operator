@@ -67,7 +67,7 @@ SHELL = /usr/bin/env bash -o pipefail
 export ENABLE_WEBHOOKS ?= false
 
 # Tag for the docker image used as the Ceph cluster for tests
-TESTING_IMAGE_TAG ?= latest
+TESTING_IMAGE_TAG ?= v0.1.0
 
 .PHONY: all
 all: build

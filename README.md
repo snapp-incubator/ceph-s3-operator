@@ -52,4 +52,8 @@ principles, Specifically about testing in an environment similar to the real wor
 For example, we don't mock RGW API. Instead, we use a simliar approach to what [go-ceph](https://github.com/ceph/go-ceph/) does.
 
 ### Building the testing image
+```shell
 TESTING_IMAGE_TAG=<desired_tag> make build-testing-image
+```
+Don't forget to update the tag in Makefile!
+
