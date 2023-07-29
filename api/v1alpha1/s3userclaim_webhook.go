@@ -18,7 +18,6 @@ package v1alpha1
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
@@ -116,8 +115,7 @@ func validateQuota(suc *S3UserClaim) field.ErrorList {
 	exceeded, err := validateAgainstNamespaceQuota(ctx, suc)
 	if err != nil {
 		s3userclaimlog.Error(err, "failed to validate against namespace quota")
-		// todo: fix error message
-		errorList = append(errorList, field.InternalError(quotaFieldPath, errors.New("")))
+		errorList = append(errorList, field.InternalError(quotaFieldPath, fmt.Errorf(consts.ContactCloudTeamErrMessage)))
 	} else if exceeded {
 		errorList = append(errorList, field.Forbidden(quotaFieldPath, consts.ExceededNamespaceQuotaErrMessage))
 	}
@@ -125,8 +123,7 @@ func validateQuota(suc *S3UserClaim) field.ErrorList {
 	exceeded, err = validateAgainstClusterQuota(ctx, suc)
 	if err != nil {
 		s3userclaimlog.Error(err, "failed to validate against cluster quota")
-		// todo: fix error message
-		errorList = append(errorList, field.InternalError(quotaFieldPath, errors.New("")))
+		errorList = append(errorList, field.InternalError(quotaFieldPath, fmt.Errorf(consts.ContactCloudTeamErrMessage)))
 	} else if exceeded {
 		errorList = append(errorList, field.Forbidden(quotaFieldPath, consts.ExceededClusterQuotaErrMessage))
 	}
