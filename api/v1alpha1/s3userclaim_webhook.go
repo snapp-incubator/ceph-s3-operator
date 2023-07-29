@@ -43,23 +43,18 @@ const (
 var (
 	s3userclaimlog = logf.Log.WithName("s3userclaim-resource")
 	runtimeClient  client.Client
+	uncachedReader client.Reader
 
 	ValidationTimeout time.Duration
 )
 
 func (suc *S3UserClaim) SetupWebhookWithManager(mgr ctrl.Manager) error {
-	// Create a new client *without* cache to reliably get objects from API Server.
-	// This is necessary as reading from a stale cache could result in missing a newly created object, which
-	// could then lead to an aggregated quota value lower than the real value.
+	runtimeClient = mgr.GetClient()
+	// uncachedReader will be used in cases that having the most up-to-date state of objects is necessary for the proper functioning.
+	// One such instance is when retrieving all S3UserClaim objects to find the aggregated quota requests.
+	// In this case, the absence a recently created S3UserClaim could lead to an aggregated value lower than the real value.
 	// https://github.com/kubernetes-sigs/controller-runtime/blob/main/FAQ.md#q-my-cache-might-be-stale-if-i-read-from-a-cache-how-should-i-deal-with-that
-	var err error
-	runtimeClient, err = client.New(mgr.GetConfig(), client.Options{
-		Scheme: mgr.GetScheme(),
-		Mapper: mgr.GetRESTMapper(),
-	})
-	if err != nil {
-		return fmt.Errorf("failed to create runtime client, %w", err)
-	}
+	uncachedReader = mgr.GetAPIReader()
 
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(suc).
@@ -145,7 +140,7 @@ func validateQuota(suc *S3UserClaim) field.ErrorList {
 func validateAgainstNamespaceQuota(ctx context.Context, suc *S3UserClaim) (bool, error) {
 	// List all s3UserClaims in the namespace
 	s3UserClaimList := &S3UserClaimList{}
-	if err := runtimeClient.List(ctx, s3UserClaimList, client.InNamespace(suc.Namespace)); err != nil {
+	if err := uncachedReader.List(ctx, s3UserClaimList, client.InNamespace(suc.Namespace)); err != nil {
 		return false, fmt.Errorf("failed to list s3 user claims, %w", err)
 	}
 
@@ -203,7 +198,7 @@ func validateAgainstClusterQuota(ctx context.Context, suc *S3UserClaim) (bool, e
 	}
 	for _, ns := range namespaces {
 		s3UserClaimList := &S3UserClaimList{}
-		if err := runtimeClient.List(ctx, s3UserClaimList, client.InNamespace(ns)); err != nil {
+		if err := uncachedReader.List(ctx, s3UserClaimList, client.InNamespace(ns)); err != nil {
 			return false, fmt.Errorf("failed to list s3UserClaims, %w", err)
 		}
 
