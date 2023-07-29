@@ -48,7 +48,18 @@ var (
 )
 
 func (suc *S3UserClaim) SetupWebhookWithManager(mgr ctrl.Manager) error {
-	runtimeClient = mgr.GetClient()
+	// Create a new client *without* cache to reliably get objects from API Server.
+	// This is necessary as reading from a stale cache could result in missing a newly created object, which
+	// could then lead to an aggregated quota value lower than the real value.
+	// https://github.com/kubernetes-sigs/controller-runtime/blob/main/FAQ.md#q-my-cache-might-be-stale-if-i-read-from-a-cache-how-should-i-deal-with-that
+	var err error
+	runtimeClient, err = client.New(mgr.GetConfig(), client.Options{
+		Scheme: mgr.GetScheme(),
+		Mapper: mgr.GetRESTMapper(),
+	})
+	if err != nil {
+		return fmt.Errorf("failed to create runtime client, %w", err)
+	}
 
 	return ctrl.NewWebhookManagedBy(mgr).
 		For(suc).

@@ -39,6 +39,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/envtest"
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
+
+	"github.com/snapp-incubator/s3-operator/internal/config"
 )
 
 // These tests use Ginkgo (BDD-style Go testing framework). Refer to
@@ -105,6 +107,7 @@ var _ = BeforeSuite(func() {
 	})
 	Expect(err).NotTo(HaveOccurred())
 
+	ValidationTimeout = time.Duration(config.DefaultConfig.ValidationWebhookTimeoutSeconds) * time.Second
 	err = (&S3UserClaim{}).SetupWebhookWithManager(mgr)
 	Expect(err).NotTo(HaveOccurred())
 
