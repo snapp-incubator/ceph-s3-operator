@@ -36,7 +36,6 @@ import (
 
 	s3v1alpha1 "github.com/snapp-incubator/s3-operator/api/v1alpha1"
 	"github.com/snapp-incubator/s3-operator/internal/config"
-	"github.com/snapp-incubator/s3-operator/internal/controllers/s3user"
 	"github.com/snapp-incubator/s3-operator/internal/controllers/s3userclaim"
 	//+kubebuilder:scaffold:imports
 )
@@ -117,11 +116,6 @@ func main() {
 	s3UserClaimReconciler := s3userclaim.NewReconciler(mgr, cfg, co)
 	if err = s3UserClaimReconciler.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "S3UserClaim")
-		os.Exit(1)
-	}
-	s3UserReconciler := s3user.NewReconciler(mgr, cfg, co)
-	if err = s3UserReconciler.SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "S3User")
 		os.Exit(1)
 	}
 

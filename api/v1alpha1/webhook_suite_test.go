@@ -63,6 +63,9 @@ var _ = BeforeSuite(func() {
 
 	managerCtx, managerCtxCancel = context.WithCancel(ctrl.SetupSignalHandler())
 
+	SetDefaultEventuallyTimeout(5 * time.Second)
+	SetDefaultEventuallyPollingInterval(time.Second)
+
 	By("bootstrapping test environment")
 	testEnv = &envtest.Environment{
 		CRDDirectoryPaths: []string{

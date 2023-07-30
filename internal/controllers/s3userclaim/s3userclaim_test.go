@@ -1,15 +1,32 @@
+/*
+Copyright 2023.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package s3userclaim
 
 import (
 	"context"
+	goerrors "errors"
 	"fmt"
 	"regexp"
-	"time"
 
 	"github.com/ceph/go-ceph/rgw/admin"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	v1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -97,11 +114,26 @@ var _ = Describe("S3UserClaim Controller", func() {
 		})
 
 		AfterEach(func() {
-			Expect(k8sClient.Delete(ctx, s3UserClaim)).To(Succeed())
-			Expect(k8sClient.Delete(ctx, s3User)).To(Succeed())
-			Expect(k8sClient.Delete(ctx, adminSecret)).To(Succeed())
-			Expect(k8sClient.Delete(ctx, readonlySecret)).To(Succeed())
-			Expect(rgwClient.RemoveUser(ctx, cephUser)).To(Succeed())
+			Eventually(func(g Gomega) {
+				g.Expect(k8sClient.Delete(ctx, s3UserClaim)).To(Succeed())
+			}).Should(Succeed())
+
+			// Ensure related objects are cleaned up
+			Eventually(func(g Gomega) {
+				g.Expect(
+					apierrors.IsNotFound(k8sClient.Get(ctx, types.NamespacedName{Name: s3User.Name}, s3User)),
+				).To(BeTrue())
+
+				// Although these secret have ownerReference and are automatically deleted in a real K8s cluster, we
+				// should manually delete them here. The reason is envtest doesn't have the real K8s garbage collector.
+				// We just ensure these objects have proper controller reference *in our tests*.
+				// https://github.com/kubernetes-sigs/controller-runtime/issues/626
+				g.Expect(k8sClient.Delete(ctx, adminSecret)).To(Succeed())
+				g.Expect(k8sClient.Delete(ctx, readonlySecret)).To(Succeed())
+
+				_, err := rgwClient.GetUser(ctx, cephUser)
+				g.Expect(goerrors.Is(err, admin.ErrNoSuchUser)).To(BeTrue())
+			}).Should(Succeed())
 		})
 
 		It("Should create Ceph user", func() {
@@ -123,7 +155,7 @@ var _ = Describe("S3UserClaim Controller", func() {
 				g.Expect(gotUser.UserQuota.MaxObjects).NotTo(BeNil())
 				g.Expect(*gotUser.UserQuota.MaxSize).To(Equal(quotaMaxSize.Value()))
 				g.Expect(*gotUser.UserQuota.MaxObjects).To(Equal(quotaMaxObjects.Value()))
-			}).WithTimeout(5 * time.Second).WithPolling(time.Second).Should(Succeed())
+			}).Should(Succeed())
 		})
 
 		It("Should create admin secret", func() {
@@ -146,7 +178,7 @@ var _ = Describe("S3UserClaim Controller", func() {
 					AccessKey: string(adminSecret.Data[consts.DataKeyAccessKey]),
 					SecretKey: string(adminSecret.Data[consts.DataKeySecretKey]),
 				}))
-			}).WithTimeout(5 * time.Second).WithPolling(time.Second).Should(Succeed())
+			}).Should(Succeed())
 		})
 
 		It("Should create readonly secret", func() {
@@ -168,7 +200,7 @@ var _ = Describe("S3UserClaim Controller", func() {
 					AccessKey: string(readonlySecret.Data[consts.DataKeyAccessKey]),
 					SecretKey: string(readonlySecret.Data[consts.DataKeySecretKey]),
 				}))
-			}).WithTimeout(5 * time.Second).WithPolling(time.Second).Should(Succeed())
+			}).Should(Succeed())
 		})
 
 		It("Should create S3User", func() {
@@ -181,7 +213,7 @@ var _ = Describe("S3UserClaim Controller", func() {
 				g.Expect(s3User.Spec.S3UserClass).To(Equal(s3UserClaim.Spec.S3UserClass))
 				g.Expect(s3User.Spec.S3UserClass).To(Equal(s3UserClaim.Spec.S3UserClass))
 				g.Expect(s3User.Spec.ClaimRef.Name).To(Equal(s3UserClaim.Name))
-			}).WithTimeout(5 * time.Second).WithPolling(time.Second).Should(Succeed())
+			}).Should(Succeed())
 		})
 
 		It("Should update status of S3UserClaim", func() {
@@ -196,7 +228,7 @@ var _ = Describe("S3UserClaim Controller", func() {
 				g.Expect(s3UserClaim.Status.Quota).NotTo(BeNil())
 				g.Expect(*s3UserClaim.Status.Quota).To(Equal(*s3UserClaim.Spec.Quota))
 				g.Expect(s3UserClaim.Status.S3UserName).To(Equal(s3UserName))
-			}).WithTimeout(5 * time.Second).WithPolling(time.Second).Should(Succeed())
+			}).Should(Succeed())
 		})
 	})
 })

@@ -19,4 +19,7 @@ const (
 	ExceededNamespaceQuotaErrMessage = "exceeded namespace quota"
 	S3UserClassImmutableErrMessage   = "s3UserClass is immutable"
 	ContactCloudTeamErrMessage       = "please contact the cloud team"
+
+	FinalizerPrefix             = "s3.snappcloud.io/"
+	S3UserClaimCleanupFinalizer = FinalizerPrefix + "cleanup-s3userclaim"
 )

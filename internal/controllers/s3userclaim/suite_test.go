@@ -20,6 +20,7 @@ import (
 	"context"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/ceph/go-ceph/rgw/admin"
 	. "github.com/onsi/ginkgo/v2"
@@ -36,7 +37,6 @@ import (
 
 	s3v1alpha1 "github.com/snapp-incubator/s3-operator/api/v1alpha1"
 	"github.com/snapp-incubator/s3-operator/internal/config"
-	"github.com/snapp-incubator/s3-operator/internal/rgwclient"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -56,6 +56,9 @@ func TestAPIs(t *testing.T) {
 
 var _ = BeforeSuite(func() {
 	logf.SetLogger(zap.New(zap.WriteTo(GinkgoWriter), zap.UseDevMode(true)))
+
+	SetDefaultEventuallyTimeout(5 * time.Second)
+	SetDefaultEventuallyPollingInterval(time.Second)
 
 	By("bootstrapping test environment")
 	testEnv = &envtest.Environment{
@@ -88,10 +91,10 @@ var _ = BeforeSuite(func() {
 	cfg := config.DefaultConfig
 	co, err := admin.New(cfg.Rgw.Endpoint, cfg.Rgw.AccessKey, cfg.Rgw.SecretKey, nil)
 	Expect(err).NotTo(HaveOccurred(), "failed to create rgw client")
-	rgwClient := rgwclient.NewRgwClient(co)
-	s3UserClaimReconciler := NewReconciler(k8sManager, &cfg, rgwClient)
+
+	s3UserClaimReconciler := NewReconciler(k8sManager, &cfg, co)
 	err = s3UserClaimReconciler.SetupWithManager(k8sManager)
-	Expect(err).ToNot(HaveOccurred(), "failed to setup manager")
+	Expect(err).ToNot(HaveOccurred(), "failed to setup s3UserClaim controller with manager")
 
 	go func() {
 		defer GinkgoRecover()

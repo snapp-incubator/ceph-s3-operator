@@ -39,9 +39,6 @@ func s3UsertoS3UserClaim(object client.Object) []reconcile.Request {
 	}
 
 	return []reconcile.Request{
-		{NamespacedName: types.NamespacedName{
-			Namespace: claimRef.Namespace,
-			Name:      claimRef.Name,
-		}},
+		{NamespacedName: types.NamespacedName{Namespace: claimRef.Namespace, Name: claimRef.Name}},
 	}
 }
