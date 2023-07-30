@@ -30,6 +30,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/tools/reference"
 
 	s3v1alpha1 "github.com/snapp-incubator/s3-operator/api/v1alpha1"
 	"github.com/snapp-incubator/s3-operator/internal/config"
@@ -69,27 +70,31 @@ var _ = Describe("S3UserClaim Controller", func() {
 		readonlySecret *v1.Secret
 	)
 
+	getS3UserClaim := func() *s3v1alpha1.S3UserClaim {
+		return &s3v1alpha1.S3UserClaim{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      s3UserClaimName,
+				Namespace: s3UserClaimNamespace,
+			},
+			Spec: s3v1alpha1.S3UserClaimSpec{
+				S3UserClass:    s3UserClass,
+				ReadonlySecret: readonlySecretName,
+				AdminSecret:    adminSecretName,
+				Quota: &s3v1alpha1.UserQuota{
+					MaxSize:    quotaMaxSize,
+					MaxObjects: quotaMaxObjects,
+				},
+			},
+		}
+	}
+
 	co, err := admin.New(cfg.Rgw.Endpoint, cfg.Rgw.AccessKey, cfg.Rgw.SecretKey, nil)
 	Expect(err).NotTo(HaveOccurred())
 	rgwClient = co
 
 	Context("When creating a new S3UserClaim", func() {
 		BeforeEach(func() {
-			s3UserClaim = &s3v1alpha1.S3UserClaim{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      s3UserClaimName,
-					Namespace: s3UserClaimNamespace,
-				},
-				Spec: s3v1alpha1.S3UserClaimSpec{
-					S3UserClass:    s3UserClass,
-					ReadonlySecret: readonlySecretName,
-					AdminSecret:    adminSecretName,
-					Quota: &s3v1alpha1.UserQuota{
-						MaxSize:    quotaMaxSize,
-						MaxObjects: quotaMaxObjects,
-					},
-				},
-			}
+			s3UserClaim = getS3UserClaim()
 
 			s3User = &s3v1alpha1.S3User{
 				ObjectMeta: metav1.ObjectMeta{
@@ -114,11 +119,12 @@ var _ = Describe("S3UserClaim Controller", func() {
 		})
 
 		AfterEach(func() {
+			By("Expect to delete the S3UserClaim successfully")
 			Eventually(func(g Gomega) {
 				g.Expect(k8sClient.Delete(ctx, s3UserClaim)).To(Succeed())
 			}).Should(Succeed())
 
-			// Ensure related objects are cleaned up
+			By("Expect the related objects are cleaned up by the controller")
 			Eventually(func(g Gomega) {
 				g.Expect(
 					apierrors.IsNotFound(k8sClient.Get(ctx, types.NamespacedName{Name: s3User.Name}, s3User)),
@@ -223,11 +229,42 @@ var _ = Describe("S3UserClaim Controller", func() {
 					types.NamespacedName{Name: s3UserClaimName, Namespace: s3UserClaimNamespace},
 					s3UserClaim,
 				)
-				g.Expect(err).NotTo(HaveOccurred())
+				g.Expect(err).To(BeNil())
 
 				g.Expect(s3UserClaim.Status.Quota).NotTo(BeNil())
 				g.Expect(*s3UserClaim.Status.Quota).To(Equal(*s3UserClaim.Spec.Quota))
 				g.Expect(s3UserClaim.Status.S3UserName).To(Equal(s3UserName))
+			}).Should(Succeed())
+		})
+	})
+
+	Context("When creating an S3User without S3UserClaim", func() {
+		BeforeEach(func() {
+			s3UserClaim = getS3UserClaim()
+			claimRef, err := reference.GetReference(k8sClient.Scheme(), s3UserClaim)
+			Expect(err).To(BeNil())
+
+			s3User = &s3v1alpha1.S3User{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: s3UserName,
+				},
+				Spec: s3v1alpha1.S3UserSpec{
+					ClaimRef: claimRef,
+				},
+			}
+		})
+
+		It("Should remove the S3User", func() {
+			By("Expecting to create an S3User successfully")
+			Eventually(func(g Gomega) {
+				g.Expect(k8sClient.Create(ctx, s3User)).To(Succeed())
+			}).Should(Succeed())
+
+			By("Exepcting the previously created S3User is deleted by the controller")
+			Eventually(func(g Gomega) {
+				g.Expect(
+					apierrors.IsNotFound(k8sClient.Get(ctx, types.NamespacedName{Name: s3User.Name}, s3User)),
+				).To(BeTrue())
 			}).Should(Succeed())
 		})
 	})
