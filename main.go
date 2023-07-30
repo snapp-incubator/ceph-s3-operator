@@ -38,7 +38,6 @@ import (
 	"github.com/snapp-incubator/s3-operator/internal/config"
 	"github.com/snapp-incubator/s3-operator/internal/controllers/s3user"
 	"github.com/snapp-incubator/s3-operator/internal/controllers/s3userclaim"
-	"github.com/snapp-incubator/s3-operator/internal/rgwclient"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -113,15 +112,14 @@ func main() {
 		setupLog.Error(err, "failed to create rgw connection")
 		os.Exit(1)
 	}
-	rgwClient := rgwclient.NewRgwClient(co)
 
 	// Setup operators
-	s3UserClaimReconciler := s3userclaim.NewReconciler(mgr, cfg, rgwClient)
+	s3UserClaimReconciler := s3userclaim.NewReconciler(mgr, cfg, co)
 	if err = s3UserClaimReconciler.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "S3UserClaim")
 		os.Exit(1)
 	}
-	s3UserReconciler := s3user.NewReconciler(mgr, cfg)
+	s3UserReconciler := s3user.NewReconciler(mgr, cfg, co)
 	if err = s3UserReconciler.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "S3User")
 		os.Exit(1)

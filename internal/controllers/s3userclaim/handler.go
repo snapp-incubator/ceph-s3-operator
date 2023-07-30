@@ -43,7 +43,7 @@ import (
 
 	s3v1alpha1 "github.com/snapp-incubator/s3-operator/api/v1alpha1"
 	"github.com/snapp-incubator/s3-operator/internal/config"
-	"github.com/snapp-incubator/s3-operator/internal/rgwclient"
+	"github.com/snapp-incubator/s3-operator/internal/controllers/common"
 	"github.com/snapp-incubator/s3-operator/pkg/consts"
 )
 
@@ -51,7 +51,7 @@ type Reconciler struct {
 	client.Client
 	scheme    *runtime.Scheme
 	logger    logr.Logger
-	rgwClient rgwclient.RgwClient
+	rgwClient *admin.API
 
 	// reconcile specific variables
 	clusterResourceQuota   *openshiftquota.ClusterResourceQuota
@@ -73,7 +73,7 @@ type Reconciler struct {
 	s3UserClass  string
 }
 
-func NewReconciler(mgr manager.Manager, cfg *config.Config, rgwClient rgwclient.RgwClient) *Reconciler {
+func NewReconciler(mgr manager.Manager, cfg *config.Config, rgwClient *admin.API) *Reconciler {
 	return &Reconciler{
 		Client:    mgr.GetClient(),
 		scheme:    mgr.GetScheme(),
@@ -137,11 +137,11 @@ func (r *Reconciler) initVars(context.Context) (*ctrl.Result, error) {
 	k8sNameSpecialChars := regexp.MustCompile(`[.-]`)
 	namespace := k8sNameSpecialChars.ReplaceAllString(r.s3UserClaim.Namespace, "_")
 	clusterName := k8sNameSpecialChars.ReplaceAllString(r.clusterName, "_")
-	r.cephTenant = fmt.Sprintf("%s__%s", clusterName, namespace)
-	r.cephUserId = r.s3UserClaim.Name
+	r.cephTenant = common.GetCephUserTenant(clusterName, namespace)
+	r.cephUserId = common.GetCephUserId(r.s3UserClaim.Name)
 	// Ceph-SDK functions that involve retrieving the user such as GetQuota, GetUser and even SetUser,
 	// required tenant name in UID field.
-	r.cephUserFullId = fmt.Sprintf("%s$%s", r.cephTenant, r.cephUserId)
+	r.cephUserFullId = common.GetCephUserFullId(clusterName, namespace, r.s3UserClaim.Name)
 	r.cephDisplayName = fmt.Sprintf("%s in %s.%s", r.s3UserClaim.Name, r.s3UserClaim.Namespace, r.clusterName)
 
 	r.readonlyCephUserId = "readonly"
@@ -185,14 +185,14 @@ func (r *Reconciler) ensureCephUserQuota(ctx context.Context) (*ctrl.Result, err
 		MaxObjects: pointer.Int64(r.s3UserClaim.Spec.Quota.MaxObjects.Value()),
 	}
 
-	switch existingQuota, err := r.rgwClient.GetQuota(ctx, desiredQuota); {
+	switch existingQuota, err := r.rgwClient.GetUserQuota(ctx, desiredQuota); {
 	case err == nil:
 		// We need to compare field by field. DeepEqual won't work here as the retrieved quota doesn't have all
 		// the fields set to their real value (e.g. UID will be empty although the real user has UID)
 		if *existingQuota.Enabled != *desiredQuota.Enabled ||
 			*existingQuota.MaxSize != *desiredQuota.MaxSize ||
 			*existingQuota.MaxObjects != *desiredQuota.MaxObjects {
-			if err := r.rgwClient.SetQuota(ctx, desiredQuota); err != nil {
+			if err := r.rgwClient.SetUserQuota(ctx, desiredQuota); err != nil {
 				r.logger.Error(err, "failed to set user quota", "userId", desiredQuota.UID)
 				return subreconciler.Requeue()
 			}
