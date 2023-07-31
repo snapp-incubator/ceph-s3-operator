@@ -131,9 +131,8 @@ var _ = Describe("S3UserClaim Controller", func() {
 				).To(BeTrue())
 
 				// Although these secret have ownerReference and are automatically deleted in a real K8s cluster, we
-				// should manually delete them here. The reason is envtest doesn't have the real K8s garbage collector.
-				// We just ensure these objects have proper controller reference *in our tests*.
-				// https://github.com/kubernetes-sigs/controller-runtime/issues/626
+				// should manually delete them here. This is explained in detail in the kubebuilder book:
+				// https://book.kubebuilder.io/reference/envtest.html#testing-considerations
 				g.Expect(k8sClient.Delete(ctx, adminSecret)).To(Succeed())
 				g.Expect(k8sClient.Delete(ctx, readonlySecret)).To(Succeed())
 
