@@ -5,44 +5,17 @@
 At Snapp! we are using Ceph object storage to have S3 for users, this operator is here
 to make working with S3 easier and more fun.
 
-## Objects
+## Design
 
-Following object is defined for each namespace:
+For the detailed discription of the design and decisions, pelease see our [design-doc](docs/DESIGN.md).
 
-```yaml
-apiVersion: s3.snappcloud.io/v1alpha
-Kind: S3UserClaim
-metadata:
-  name: myuser
-  namespace: dispatching-test
-spec:
-  s3ClassName: (optional) have default value
-  readOnlySecret: (optional)
-  adminSecret: (required)
-status:
-  quota: (max_buckets, max_size, max_objects)
-```
+## Versioning
 
-and this object is cluster scoped:
+A new docker image will be created each time a tag starting with `v` is pushed to the main branch.
 
-```yaml
-apiVersion: s3.snappcloud.io/v1alpha
-Kind: S3User
-metadata:
-  name: myuser
-spec:
-  s3ClassName:
-  claimPolicy: Delete / Retain
-  claimRef:
-    apiVersion: v1
-    kind: S3UserClaim
-    name: myuser
-    namespace: baly-ode-001
-    resourceVersion: "267741823"
-    uid: ff1eddc9-fb16-4762-ba43-f193ed23b92d
-  quota: (max_buckets, max_size, max_objects)
-status:
-```
+For Helm charts, there's a relase job that will create a new
+release [when a change is detected](https://helm.sh/docs/howto/chart_releaser_action/#github-actions-workflow) in
+the `deploy/charts` directory.
 
 ## Development
 
