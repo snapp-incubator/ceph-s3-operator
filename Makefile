@@ -63,6 +63,12 @@ endif
 SHELL = /usr/bin/env bash -o pipefail
 .SHELLFLAGS = -ec
 
+# Set this to any value other than false to setup webhooks when running the controller
+export ENABLE_WEBHOOKS ?= false
+
+# Tag for the docker image used as the Ceph cluster for tests
+TESTING_IMAGE_TAG ?= v0.1.0
+
 .PHONY: all
 all: build
 
@@ -102,7 +108,7 @@ vet: ## Run go vet against code.
 	go vet ./...
 
 .PHONY: test
-test: manifests generate fmt vet envtest ## Run tests.
+test: manifests generate fmt vet envtest setup-dev-env ## Run tests.
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) --bin-dir $(LOCALBIN) -p path)" go test ./... -coverprofile cover.out
 
 ##@ Build
@@ -258,3 +264,25 @@ catalog-build: opm ## Build a catalog image.
 .PHONY: catalog-push
 catalog-push: ## Push a catalog image.
 	$(MAKE) docker-push IMG=$(CATALOG_IMG)
+
+.PHONY: build-testing-image
+build-testing-image:
+	docker build -t docker.io/spc35771/s3-operator-testing:$(TESTING_IMAGE_TAG) testing/
+
+.PHONY: setup-dev-env
+setup-dev-env:
+	-docker network create test_ceph_net
+	-docker run -p 8000:80 --rm -d --name test_ceph_a --hostname test_ceph_a --net test_ceph_net docker.io/spc35771/s3-operator-testing:$(TESTING_IMAGE_TAG)
+	-docker run --rm -d --name test_ceph_b --hostname test_ceph_b --net test_ceph_net docker.io/spc35771/s3-operator-testing:$(TESTING_IMAGE_TAG)
+	for i in {1..10}; do \
+  		if docker logs --tail 2 test_ceph_a | grep "run sleep to keep container up" > /dev/null; then \
+  		  break; \
+  		fi; \
+  		sleep 5; \
+  		echo "------------waiting for ceph setup------------"; \
+	done
+
+.PHONY: teardown-dev-env
+teardown-dev-env:
+	docker rm -f test_ceph_a test_ceph_b
+	docker network rm test_ceph_net

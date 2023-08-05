@@ -15,10 +15,25 @@ spec:
     singular: s3userclaim
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - jsonPath: .spec.s3UserClass
+      name: S3USERCLASS
+      type: string
+    - jsonPath: .status.s3UserName
+      name: S3USER
+      type: string
+    - jsonPath: .status.quota.maxObjects
+      name: MAX OBJECTS
+      type: string
+    - jsonPath: .status.quota.maxSize
+      name: MAX SIZE
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: AGE
+      type: date
+    name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: S3UserClaim is the Schema for the s3userclaims API
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -37,15 +52,58 @@ spec:
             properties:
               adminSecret:
                 type: string
-              readOnlySecret:
+              quota:
+                default:
+                  maxObjects: "5368709120"
+                  maxSize: "1000"
+                description: UserQuota specifies the quota for a user in Ceph
+                properties:
+                  maxObjects:
+                    anyOf:
+                    - type: integer
+                    - type: string
+                    description: max number of objects the user can store
+                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                    x-kubernetes-int-or-string: true
+                  maxSize:
+                    anyOf:
+                    - type: integer
+                    - type: string
+                    description: max number of bytes the user can store
+                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                    x-kubernetes-int-or-string: true
+                type: object
+              readonlySecret:
                 type: string
-              s3ClassName:
+              s3UserClass:
                 type: string
             required:
             - adminSecret
+            - readonlySecret
             type: object
           status:
             description: S3UserClaimStatus defines the observed state of S3UserClaim
+            properties:
+              quota:
+                description: UserQuota specifies the quota for a user in Ceph
+                properties:
+                  maxObjects:
+                    anyOf:
+                    - type: integer
+                    - type: string
+                    description: max number of objects the user can store
+                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                    x-kubernetes-int-or-string: true
+                  maxSize:
+                    anyOf:
+                    - type: integer
+                    - type: string
+                    description: max number of bytes the user can store
+                    pattern: ^(\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))(([KMGTPE]i)|[numkMGTPE]|([eE](\+|-)?(([0-9]+(\.[0-9]*)?)|(\.[0-9]+))))?$
+                    x-kubernetes-int-or-string: true
+                type: object
+              s3UserName:
+                type: string
             type: object
         type: object
     served: true

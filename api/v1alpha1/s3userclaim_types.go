@@ -20,29 +20,39 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
 // S3UserClaimSpec defines the desired state of S3UserClaim
 type S3UserClaimSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// +kubebuilder:validation:Optional
+	S3UserClass string `json:"s3UserClass,omitempty"`
 
-	S3ClassName    string `json:"s3ClassName,omitempty"`
-	ReadOnlySecret string `json:"readOnlySecret,omitempty"`
-	AdminSecret    string `json:"adminSecret"`
+	// +kubebuilder:validation:Required
+	ReadonlySecret string `json:"readonlySecret"`
+
+	// +kubebuilder:validation:Required
+	AdminSecret string `json:"adminSecret"`
+
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:default:={"maxSize":"1000", "maxObjects":"5368709120"}
+	Quota *UserQuota `json:"quota,omitempty"`
 }
 
 // S3UserClaimStatus defines the observed state of S3UserClaim
 type S3UserClaimStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	// +kubebuilder:validation:Optional
+	Quota *UserQuota `json:"quota,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	S3UserName string `json:"s3UserName,omitempty"`
 }
 
-//+kubebuilder:object:root=true
-//+kubebuilder:subresource:status
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="S3USERCLASS",type=string,JSONPath=`.spec.s3UserClass`
+// +kubebuilder:printcolumn:name="S3USER",type=string,JSONPath=`.status.s3UserName`
+// +kubebuilder:printcolumn:name="MAX OBJECTS",type=string,JSONPath=`.status.quota.maxObjects`
+// +kubebuilder:printcolumn:name="MAX SIZE",type=string,JSONPath=`.status.quota.maxSize`
+// +kubebuilder:printcolumn:name="AGE",type=date,JSONPath=`.metadata.creationTimestamp`
 
-// S3UserClaim is the Schema for the s3userclaims API
 type S3UserClaim struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
@@ -51,7 +61,7 @@ type S3UserClaim struct {
 	Status S3UserClaimStatus `json:"status,omitempty"`
 }
 
-//+kubebuilder:object:root=true
+// +kubebuilder:object:root=true
 
 // S3UserClaimList contains a list of S3UserClaim
 type S3UserClaimList struct {
@@ -62,4 +72,8 @@ type S3UserClaimList struct {
 
 func init() {
 	SchemeBuilder.Register(&S3UserClaim{}, &S3UserClaimList{})
+}
+
+func (suc *S3UserClaim) GetS3UserClass() string {
+	return suc.Spec.S3UserClass
 }
