@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ include "s3-operator.fullname" . }}-controller-manager-config
+  labels:
+  {{- include "s3-operator.labels" . | nindent 4 }}
+stringData:
+  config.yaml: {{ required "controllerManagerConfig.configYaml is required" .Values.controllerManagerConfig.configYaml
+    | quote }}

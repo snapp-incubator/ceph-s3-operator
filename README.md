@@ -47,13 +47,27 @@ status:
 ## Development
 
 We follow [Kubebuilder](https://github.com/kubernetes-sigs/kubebuilder/blob/master/DESIGN.md#development) developement
-principles, Specifically about testing in an environment similar to the real world and avoiding mocks as much as possible.
+principles, Specifically about testing in an environment similar to the real world and avoiding mocks as much as
+possible.
 
-For example, we don't mock RGW API. Instead, we use a simliar approach to what [go-ceph](https://github.com/ceph/go-ceph/) does.
+For example, we don't mock RGW API. Instead, we use a simliar approach to
+what [go-ceph](https://github.com/ceph/go-ceph/) does.
 
 ### Building the testing image
+
 ```shell
 TESTING_IMAGE_TAG=<desired_tag> make build-testing-image
 ```
+
 Don't forget to update the tag in Makefile!
 
+### Building the helm chart
+
+We use [helmify](https://github.com/arttor/helmify) to generate Helm chart from kustomize rendered manifests. To update
+the chart run:
+
+```shell
+make helm
+```
+
+The chart will be created/updated in `deploy/charts/s3-operator` path

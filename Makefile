@@ -286,3 +286,14 @@ setup-dev-env:
 teardown-dev-env:
 	docker rm -f test_ceph_a test_ceph_b
 	docker network rm test_ceph_net
+
+######################### Helmify
+HELMIFY ?= $(LOCALBIN)/helmify
+
+.PHONY: helmify
+helmify: $(HELMIFY) ## Download helmify locally if necessary.
+$(HELMIFY): $(LOCALBIN)
+	test -s $(LOCALBIN)/helmify || GOBIN=$(LOCALBIN) go install github.com/arttor/helmify/cmd/helmify@v0.4.5
+
+helm: manifests kustomize helmify
+	$(KUSTOMIZE) build config/default | $(HELMIFY) deploy/charts/s3-operator
