@@ -83,7 +83,10 @@ func NewReconciler(mgr manager.Manager, cfg *config.Config, rgwClient *admin.API
 //+kubebuilder:rbac:groups=s3.snappcloud.io,resources=s3users,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=s3.snappcloud.io,resources=s3users/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=s3.snappcloud.io,resources=s3users/finalizers,verbs=update
+//+kubebuilder:rbac:groups=core,resources=namespaces,verbs=get;list;watch
 //+kubebuilder:rbac:groups=core,resources=secrets,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=core,resources=resourcequotas,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=quota.openshift.io,resources=clusterresourcequotas,verbs=get;list;watch;create;update;patch;delete
 
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	r.logger = log.FromContext(ctx)
