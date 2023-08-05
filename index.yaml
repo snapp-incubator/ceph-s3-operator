@@ -1,0 +1,14 @@
+apiVersion: v1
+entries:
+  s3-operator:
+  - apiVersion: v2
+    appVersion: 0.1.1
+    created: "2023-08-05T11:28:42.399132286Z"
+    description: A Helm chart for Kubernetes
+    digest: 9aa4d080a3a2c75172ebd941e840296195d1975857f966e5fca5c618f4326d7e
+    name: s3-operator
+    type: application
+    urls:
+    - https://github.com/snapp-incubator/s3-operator/releases/download/s3-operator-0.2.0/s3-operator-0.2.0.tgz
+    version: 0.2.0
+generated: "2023-08-05T11:28:42.399138486Z"
