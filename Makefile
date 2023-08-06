@@ -273,7 +273,6 @@ build-testing-image:
 setup-dev-env:
 	-docker network create test_ceph_net
 	-docker run -p 8000:80 --rm -d --name test_ceph_a --hostname test_ceph_a --net test_ceph_net docker.io/spc35771/s3-operator-testing:$(TESTING_IMAGE_TAG)
-	-docker run --rm -d --name test_ceph_b --hostname test_ceph_b --net test_ceph_net docker.io/spc35771/s3-operator-testing:$(TESTING_IMAGE_TAG)
 	for i in {1..10}; do \
   		if docker logs --tail 2 test_ceph_a | grep "run sleep to keep container up" > /dev/null; then \
   		  break; \
@@ -284,7 +283,7 @@ setup-dev-env:
 
 .PHONY: teardown-dev-env
 teardown-dev-env:
-	docker rm -f test_ceph_a test_ceph_b
+	docker rm -f test_ceph_a
 	docker network rm test_ceph_net
 
 ######################### Helmify
