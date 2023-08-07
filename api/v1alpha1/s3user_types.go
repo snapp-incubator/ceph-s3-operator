@@ -45,6 +45,7 @@ type S3UserStatus struct {
 // +kubebuilder:printcolumn:name="CLAIM NAME",type=string,JSONPath=`.spec.claimRef.name`
 // +kubebuilder:printcolumn:name="MAX OBJECTS",type=string,JSONPath=`.spec.quota.maxObjects`
 // +kubebuilder:printcolumn:name="MAX SIZE",type=string,JSONPath=`.spec.quota.maxSize`
+// +kubebuilder:printcolumn:name="MAX BUCKETS",type=string,JSONPath=`.spec.quota.maxBuckets`
 // +kubebuilder:printcolumn:name="AGE",type=date,JSONPath=`.metadata.creationTimestamp`
 
 type S3User struct {

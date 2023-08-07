@@ -49,6 +49,7 @@ var _ = Describe("S3UserClaim Controller", func() {
 		s3UserName          = fmt.Sprintf("%s.%s", s3UserClaimNamespace, s3UserClaimName)
 		quotaMaxSize        = resource.MustParse("3k")
 		quotaMaxObjects     = resource.MustParse("4M")
+		quotaMaxBuckets     = 20
 		cfg                 = config.DefaultConfig
 		ctx                 = context.Background()
 		k8sNameSpecialChars = regexp.MustCompile(`[.-]`)
@@ -83,6 +84,7 @@ var _ = Describe("S3UserClaim Controller", func() {
 				Quota: &s3v1alpha1.UserQuota{
 					MaxSize:    quotaMaxSize,
 					MaxObjects: quotaMaxObjects,
+					MaxBuckets: quotaMaxBuckets,
 				},
 			},
 		}
@@ -160,6 +162,7 @@ var _ = Describe("S3UserClaim Controller", func() {
 				g.Expect(gotUser.UserQuota.MaxObjects).NotTo(BeNil())
 				g.Expect(*gotUser.UserQuota.MaxSize).To(Equal(quotaMaxSize.Value()))
 				g.Expect(*gotUser.UserQuota.MaxObjects).To(Equal(quotaMaxObjects.Value()))
+				g.Expect(*gotUser.MaxBuckets).To(Equal(quotaMaxBuckets))
 			}).Should(Succeed())
 		})
 

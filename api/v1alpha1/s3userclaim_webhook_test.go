@@ -59,6 +59,7 @@ var _ = Describe("", Ordered, ContinueOnFailure, func() {
 					Hard: v1.ResourceList{
 						consts.ResourceNameS3MaxSize:    resource.MustParse("5k"),
 						consts.ResourceNameS3MaxObjects: resource.MustParse("5k"),
+						consts.ResourceNameS3MaxBuckets: resource.MustParse("5k"),
 					},
 				},
 			},
@@ -75,6 +76,7 @@ var _ = Describe("", Ordered, ContinueOnFailure, func() {
 					Hard: v1.ResourceList{
 						consts.ResourceNameS3MaxSize:    resource.MustParse("3k"),
 						consts.ResourceNameS3MaxObjects: resource.MustParse("3k"),
+						consts.ResourceNameS3MaxBuckets: resource.MustParse("3k"),
 					},
 				},
 			})).To(Succeed())
@@ -222,6 +224,63 @@ var _ = Describe("", Ordered, ContinueOnFailure, func() {
 			}).Should(Succeed())
 		})
 
+		It("Should deny creating if total requested max buckets exceeds cluster quota", func() {
+			Eventually(func(g Gomega) {
+				s3UserClaim := getS3UserClaim(s3UserClaimName, targetNamespaces[0], &UserQuota{
+					MaxSize:    resource.MustParse("1k"),
+					MaxObjects: resource.MustParse("1k"),
+					MaxBuckets: 3000,
+				})
+				g.Expect(k8sClient.Create(ctx, s3UserClaim)).To(Succeed())
+			}).Should(Succeed())
+
+			Eventually(func(g Gomega) {
+				s3UserClaim2 := getS3UserClaim(s3UserClaimName, targetNamespaces[1], &UserQuota{
+					MaxSize:    resource.MustParse("1k"),
+					MaxObjects: resource.MustParse("1k"),
+					MaxBuckets: 3000,
+				})
+				err := k8sClient.Create(ctx, s3UserClaim2)
+				var apiStatus apierrors.APIStatus
+				g.Expect(goerrors.As(err, &apiStatus)).To(BeTrue())
+				g.Expect(apiStatus.Status().Code).To(Equal(int32(http.StatusUnprocessableEntity)))
+				g.Expect(apiStatus.Status().Message).To(ContainSubstring(consts.ExceededClusterQuotaErrMessage))
+				g.Expect(apiStatus.Status().Message).NotTo(ContainSubstring(consts.ExceededNamespaceQuotaErrMessage))
+
+				// Ensure only the first claim is created
+				s3UserClaimList := &S3UserClaimList{}
+				g.Expect(k8sClient.List(ctx, s3UserClaimList)).To(Succeed())
+				g.Expect(len(s3UserClaimList.Items)).To(Equal(1))
+			}).Should(Succeed())
+		})
+		It("Should deny updating if total requested max buckets exceeds cluster quota", func() {
+			Eventually(func(g Gomega) {
+				s3UserClaim := getS3UserClaim(s3UserClaimName, targetNamespaces[0], &UserQuota{
+					MaxSize:    resource.MustParse("1k"),
+					MaxObjects: resource.MustParse("1k"),
+					MaxBuckets: 3000,
+				})
+				g.Expect(k8sClient.Create(ctx, s3UserClaim)).To(Succeed())
+			}).Should(Succeed())
+
+			Eventually(func(g Gomega) {
+				s3UserClaim2 := getS3UserClaim(s3UserClaimName, targetNamespaces[1], &UserQuota{
+					MaxSize:    resource.MustParse("1k"),
+					MaxObjects: resource.MustParse("1k"),
+					MaxBuckets: 1000,
+				})
+				g.Expect(k8sClient.Create(ctx, s3UserClaim2)).To(Succeed())
+
+				s3UserClaim2.Spec.Quota.MaxBuckets = 3000
+				err := k8sClient.Update(ctx, s3UserClaim2)
+				var apiStatus apierrors.APIStatus
+				g.Expect(goerrors.As(err, &apiStatus)).To(BeTrue())
+				g.Expect(apiStatus.Status().Code).To(Equal(int32(http.StatusUnprocessableEntity)))
+				g.Expect(apiStatus.Status().Message).To(ContainSubstring(consts.ExceededClusterQuotaErrMessage))
+				g.Expect(apiStatus.Status().Message).NotTo(ContainSubstring(consts.ExceededNamespaceQuotaErrMessage))
+			}).Should(Succeed())
+		})
+
 		It("Should deny creating if total requested max size exceeds namespace quota", func() {
 			targetNamespace := targetNamespaces[0]
 			Eventually(func(g Gomega) {
@@ -332,12 +391,72 @@ var _ = Describe("", Ordered, ContinueOnFailure, func() {
 			}).Should(Succeed())
 		})
 
+		It("Should deny creating if total requested max buckets exceeds namespace quota", func() {
+			targetNamespace := targetNamespaces[0]
+			Eventually(func(g Gomega) {
+				s3UserClaim := getS3UserClaim(s3UserClaimName, targetNamespace, &UserQuota{
+					MaxSize:    resource.MustParse("1k"),
+					MaxObjects: resource.MustParse("1k"),
+					MaxBuckets: 2000,
+				})
+				g.Expect(k8sClient.Create(ctx, s3UserClaim)).To(Succeed())
+			}).Should(Succeed())
+
+			Eventually(func(g Gomega) {
+				s3UserClaim2 := getS3UserClaim(s3UserClaimName+"2", targetNamespace, &UserQuota{
+					MaxSize:    resource.MustParse("1k"),
+					MaxObjects: resource.MustParse("1k"),
+					MaxBuckets: 2000,
+				})
+				err := k8sClient.Create(ctx, s3UserClaim2)
+				var apiStatus apierrors.APIStatus
+				g.Expect(goerrors.As(err, &apiStatus)).To(BeTrue())
+				g.Expect(apiStatus.Status().Code).To(Equal(int32(http.StatusUnprocessableEntity)))
+				g.Expect(apiStatus.Status().Message).To(ContainSubstring(consts.ExceededNamespaceQuotaErrMessage))
+				g.Expect(apiStatus.Status().Message).NotTo(ContainSubstring(consts.ExceededClusterQuotaErrMessage))
+
+				// Ensure only the first claim is created
+				s3UserClaimList := &S3UserClaimList{}
+				g.Expect(k8sClient.List(ctx, s3UserClaimList)).To(Succeed())
+				g.Expect(len(s3UserClaimList.Items)).To(Equal(1))
+			}).Should(Succeed())
+		})
+		It("Should deny updating if total requested max buckets exceeds namespace quota", func() {
+			targetNamespace := targetNamespaces[0]
+			Eventually(func(g Gomega) {
+				s3UserClaim := getS3UserClaim(s3UserClaimName, targetNamespace, &UserQuota{
+					MaxSize:    resource.MustParse("1k"),
+					MaxObjects: resource.MustParse("2k"),
+					MaxBuckets: 2000,
+				})
+				g.Expect(k8sClient.Create(ctx, s3UserClaim)).To(Succeed())
+			}).Should(Succeed())
+
+			Eventually(func(g Gomega) {
+				s3UserClaim2 := getS3UserClaim(s3UserClaimName+"2", targetNamespace, &UserQuota{
+					MaxSize:    resource.MustParse("1k"),
+					MaxObjects: resource.MustParse("1k"),
+					MaxBuckets: 1000,
+				})
+				g.Expect(k8sClient.Create(ctx, s3UserClaim2)).To(Succeed())
+
+				s3UserClaim2.Spec.Quota.MaxBuckets = 2000
+				err := k8sClient.Update(ctx, s3UserClaim2)
+				var apiStatus apierrors.APIStatus
+				g.Expect(goerrors.As(err, &apiStatus)).To(BeTrue())
+				g.Expect(apiStatus.Status().Code).To(Equal(int32(http.StatusUnprocessableEntity)))
+				g.Expect(apiStatus.Status().Message).To(ContainSubstring(consts.ExceededNamespaceQuotaErrMessage))
+				g.Expect(apiStatus.Status().Message).NotTo(ContainSubstring(consts.ExceededClusterQuotaErrMessage))
+			}).Should(Succeed())
+		})
+
 		// Allow scenarios
 		It("Should allow creating if total requested quota doesn't exceed any quota", func() {
 			Eventually(func(g Gomega) {
 				s3UserClaim := getS3UserClaim(s3UserClaimName, targetNamespaces[0], &UserQuota{
 					MaxSize:    resource.MustParse("1k"),
 					MaxObjects: resource.MustParse("1k"),
+					MaxBuckets: 1000,
 				})
 				g.Expect(k8sClient.Create(ctx, s3UserClaim)).To(Succeed())
 			}).Should(Succeed())
@@ -346,6 +465,7 @@ var _ = Describe("", Ordered, ContinueOnFailure, func() {
 				s3UserClaim2 := getS3UserClaim(s3UserClaimName, targetNamespaces[1], &UserQuota{
 					MaxSize:    resource.MustParse("1k"),
 					MaxObjects: resource.MustParse("1k"),
+					MaxBuckets: 1000,
 				})
 				g.Expect(k8sClient.Create(ctx, s3UserClaim2)).To(Succeed())
 			}).Should(Succeed())
@@ -357,6 +477,7 @@ var _ = Describe("", Ordered, ContinueOnFailure, func() {
 					s3UserClaim := getS3UserClaim(s3UserClaimName, targetNamespaces[0], &UserQuota{
 						MaxSize:    resource.MustParse("1k"),
 						MaxObjects: resource.MustParse("1k"),
+						MaxBuckets: 1000,
 					})
 					g.Expect(k8sClient.Create(ctx, s3UserClaim)).To(Succeed())
 				}).Should(Succeed())
@@ -365,12 +486,14 @@ var _ = Describe("", Ordered, ContinueOnFailure, func() {
 					s3UserClaim2 := getS3UserClaim(s3UserClaimName, targetNamespaces[1], &UserQuota{
 						MaxSize:    resource.MustParse("10"),
 						MaxObjects: resource.MustParse("10"),
+						MaxBuckets: 10,
 					})
 					g.Expect(k8sClient.Create(ctx, s3UserClaim2)).To(Succeed())
 
 					s3UserClaim2.Spec.Quota = &UserQuota{
 						MaxSize:    resource.MustParse("1k"),
 						MaxObjects: resource.MustParse("1k"),
+						MaxBuckets: 1000,
 					}
 					g.Expect(k8sClient.Update(ctx, s3UserClaim2)).To(Succeed())
 				}).Should(Succeed())

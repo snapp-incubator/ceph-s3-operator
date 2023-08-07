@@ -32,7 +32,7 @@ type S3UserClaimSpec struct {
 	AdminSecret string `json:"adminSecret"`
 
 	// +kubebuilder:validation:Optional
-	// +kubebuilder:default:={"maxSize":"1000", "maxObjects":"5368709120"}
+	// +kubebuilder:default:={"maxSize":"1000", "maxObjects":"5368709120", "maxBuckets": 2}
 	Quota *UserQuota `json:"quota,omitempty"`
 }
 
@@ -51,6 +51,7 @@ type S3UserClaimStatus struct {
 // +kubebuilder:printcolumn:name="S3USER",type=string,JSONPath=`.status.s3UserName`
 // +kubebuilder:printcolumn:name="MAX OBJECTS",type=string,JSONPath=`.status.quota.maxObjects`
 // +kubebuilder:printcolumn:name="MAX SIZE",type=string,JSONPath=`.status.quota.maxSize`
+// +kubebuilder:printcolumn:name="MAX BUCKETS",type=string,JSONPath=`.status.quota.maxBuckets`
 // +kubebuilder:printcolumn:name="AGE",type=date,JSONPath=`.metadata.creationTimestamp`
 
 type S3UserClaim struct {

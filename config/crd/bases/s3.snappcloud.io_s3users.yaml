@@ -31,6 +31,9 @@ spec:
     - jsonPath: .spec.quota.maxSize
       name: MAX SIZE
       type: string
+    - jsonPath: .spec.quota.maxBuckets
+      name: MAX BUCKETS
+      type: string
     - jsonPath: .metadata.creationTimestamp
       name: AGE
       type: date
@@ -116,6 +119,9 @@ spec:
               quota:
                 description: UserQuota specifies the quota for a user in Ceph
                 properties:
+                  maxBuckets:
+                    description: max number of buckets the user can create
+                    type: integer
                   maxObjects:
                     anyOf:
                     - type: integer

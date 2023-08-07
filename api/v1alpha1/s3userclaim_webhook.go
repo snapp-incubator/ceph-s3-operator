@@ -147,14 +147,17 @@ func validateAgainstNamespaceQuota(ctx context.Context, suc *S3UserClaim) (bool,
 	// Sum all resource requests
 	totalMaxObjects := resource.Quantity{}
 	totalMaxSize := resource.Quantity{}
+	totalMaxBuckets := int64(0)
 	for _, claim := range s3UserClaimList.Items {
 		if claim.Name != suc.Name {
 			totalMaxObjects.Add(claim.Spec.Quota.MaxObjects)
 			totalMaxSize.Add(claim.Spec.Quota.MaxSize)
+			totalMaxBuckets += int64(claim.Spec.Quota.MaxBuckets)
 		}
 	}
 	totalMaxObjects.Add(suc.Spec.Quota.MaxObjects)
 	totalMaxSize.Add(suc.Spec.Quota.MaxSize)
+	totalMaxBuckets += int64(suc.Spec.Quota.MaxBuckets)
 
 	// List all quotas in the namespace and validate against them
 	resourceQuotaList := &v1.ResourceQuotaList{}
@@ -170,6 +173,11 @@ func validateAgainstNamespaceQuota(ctx context.Context, suc *S3UserClaim) (bool,
 		}
 		if maxSize, ok := quota.Spec.Hard[consts.ResourceNameS3MaxSize]; ok {
 			if totalMaxSize.Cmp(maxSize) > 0 {
+				return true, nil
+			}
+		}
+		if maxBuckets, ok := quota.Spec.Hard[consts.ResourceNameS3MaxBuckets]; ok {
+			if totalMaxBuckets > maxBuckets.Value() {
 				return true, nil
 			}
 		}
@@ -192,6 +200,7 @@ func validateAgainstClusterQuota(ctx context.Context, suc *S3UserClaim) (bool, e
 	// Sum all resource requests in team's namespaces
 	totalMaxObjects := resource.Quantity{}
 	totalMaxSize := resource.Quantity{}
+	totalMaxBuckets := int64(0)
 	namespaces, err := findTeamNamespaces(ctx, team)
 	if err != nil {
 		return false, fmt.Errorf("failed to find team namespaces, %w", err)
@@ -206,11 +215,13 @@ func validateAgainstClusterQuota(ctx context.Context, suc *S3UserClaim) (bool, e
 			if claim.Name != suc.Name || claim.Namespace != suc.Namespace {
 				totalMaxObjects.Add(claim.Spec.Quota.MaxObjects)
 				totalMaxSize.Add(claim.Spec.Quota.MaxSize)
+				totalMaxBuckets += int64(claim.Spec.Quota.MaxBuckets)
 			}
 		}
 	}
 	totalMaxObjects.Add(suc.Spec.Quota.MaxObjects)
 	totalMaxSize.Add(suc.Spec.Quota.MaxSize)
+	totalMaxBuckets += int64(suc.Spec.Quota.MaxBuckets)
 
 	// Validate against clusterResourceQuota
 	if maxObjects, ok := clusterQuota.Spec.Quota.Hard[consts.ResourceNameS3MaxObjects]; ok {
@@ -220,6 +231,11 @@ func validateAgainstClusterQuota(ctx context.Context, suc *S3UserClaim) (bool, e
 	}
 	if maxSize, ok := clusterQuota.Spec.Quota.Hard[consts.ResourceNameS3MaxSize]; ok {
 		if totalMaxSize.Cmp(maxSize) > 0 {
+			return true, nil
+		}
+	}
+	if maxBuckets, ok := clusterQuota.Spec.Quota.Hard[consts.ResourceNameS3MaxBuckets]; ok {
+		if totalMaxBuckets > maxBuckets.Value() {
 			return true, nil
 		}
 	}
