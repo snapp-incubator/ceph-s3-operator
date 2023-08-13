@@ -10,3 +10,4 @@ spec:
   quota:
     maxSize: 1000
     maxObjects: 1000
+    maxBuckets: 5

@@ -52,20 +52,29 @@ func (r *Reconciler) ensureCephUser(ctx context.Context) (*ctrl.Result, error) {
 	desiredUser := admin.User{
 		ID:          r.cephUserFullId,
 		DisplayName: r.cephDisplayName,
+		MaxBuckets:  pointer.Int(r.s3UserClaim.Spec.Quota.MaxBuckets),
 	}
+	logger := r.logger.WithValues("userId", desiredUser.ID)
 
-	switch exitingUser, err := r.rgwClient.GetUser(ctx, desiredUser); {
+	switch existingUser, err := r.rgwClient.GetUser(ctx, desiredUser); {
 	case err == nil:
-		r.cephUser = exitingUser
+		if existingUser.MaxBuckets != desiredUser.MaxBuckets {
+			existingUser, err = r.rgwClient.ModifyUser(ctx, desiredUser)
+			if err != nil {
+				logger.Error(err, "failed to update ceph user", "userId", desiredUser.ID)
+				return subreconciler.Requeue()
+			}
+		}
+		r.cephUser = existingUser
 	case goerrors.Is(err, admin.ErrNoSuchUser):
 		user, err := r.rgwClient.CreateUser(ctx, desiredUser)
 		if err != nil {
-			r.logger.Error(err, "failed to create ceph user", "userId", desiredUser.ID)
+			logger.Error(err, "failed to create ceph user", "userId", desiredUser.ID)
 			return subreconciler.Requeue()
 		}
 		r.cephUser = user
 	default:
-		r.logger.Error(err, "failed to get ceph user")
+		logger.Error(err, "failed to get ceph user", "userId", desiredUser.ID)
 		return subreconciler.Requeue()
 	}
 
@@ -261,6 +270,7 @@ func (r *Reconciler) assembleS3User() (*s3v1alpha1.S3User, error) {
 			Quota: &s3v1alpha1.UserQuota{
 				MaxSize:    r.s3UserClaim.Spec.Quota.MaxSize,
 				MaxObjects: r.s3UserClaim.Spec.Quota.MaxObjects,
+				MaxBuckets: r.s3UserClaim.Spec.Quota.MaxBuckets,
 			},
 			ClaimRef: claimRef,
 		},

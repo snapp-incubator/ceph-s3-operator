@@ -3,7 +3,7 @@
 # It should be run by config/default
 resources:
 - bases/s3.snappcloud.io_s3userclaims.yaml
-#- bases/s3.snappcloud.io_s3users.yaml
+- bases/s3.snappcloud.io_s3users.yaml
 #+kubebuilder:scaffold:crdkustomizeresource
 
 patchesStrategicMerge:

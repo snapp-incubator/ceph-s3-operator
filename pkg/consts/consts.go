@@ -7,6 +7,7 @@ const (
 
 	ResourceNameS3MaxObjects v1.ResourceName = "s3/objects"
 	ResourceNameS3MaxSize    v1.ResourceName = "s3/size"
+	ResourceNameS3MaxBuckets v1.ResourceName = "s3/buckets"
 
 	QuotaTypeUser = "user"
 

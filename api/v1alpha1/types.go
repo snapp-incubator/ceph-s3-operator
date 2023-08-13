@@ -8,4 +8,6 @@ type UserQuota struct {
 	MaxSize resource.Quantity `json:"maxSize,omitempty"`
 	// max number of objects the user can store
 	MaxObjects resource.Quantity `json:"maxObjects,omitempty"`
+	// max number of buckets the user can create
+	MaxBuckets int `json:"maxBuckets,omitempty"`
 }
