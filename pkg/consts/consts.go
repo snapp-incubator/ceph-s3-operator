@@ -2,6 +2,10 @@ package consts
 
 import v1 "k8s.io/api/core/v1"
 
+type CustomError string
+
+func (e CustomError) Error() string { return string(e) }
+
 const (
 	LabelTeam = "snappcloud.io/team"
 
@@ -16,10 +20,11 @@ const (
 
 	CephKeyTypeS3 = "s3"
 
-	ExceededClusterQuotaErrMessage   = "exceeded cluster quota"
-	ExceededNamespaceQuotaErrMessage = "exceeded namespace quota"
-	S3UserClassImmutableErrMessage   = "s3UserClass is immutable"
-	ContactCloudTeamErrMessage       = "please contact the cloud team"
+	ErrExceededClusterQuota        = CustomError("exceeded cluster quota")
+	ErrExceededNamespaceQuota      = CustomError("exceeded namespace quota")
+	ErrClusterQuotaNotDefined      = CustomError("cluter quota is not defined")
+	S3UserClassImmutableErrMessage = "s3UserClass is immutable"
+	ContactCloudTeamErrMessage     = "please contact the cloud team"
 
 	FinalizerPrefix             = "s3.snappcloud.io/"
 	S3UserClaimCleanupFinalizer = FinalizerPrefix + "cleanup-s3userclaim"

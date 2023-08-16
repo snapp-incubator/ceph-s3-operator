@@ -136,8 +136,8 @@ var _ = Describe("", Ordered, ContinueOnFailure, func() {
 				var apiStatus apierrors.APIStatus
 				g.Expect(goerrors.As(err, &apiStatus)).To(BeTrue())
 				g.Expect(apiStatus.Status().Code).To(Equal(int32(http.StatusUnprocessableEntity)))
-				g.Expect(apiStatus.Status().Message).To(ContainSubstring(consts.ExceededClusterQuotaErrMessage))
-				g.Expect(apiStatus.Status().Message).NotTo(ContainSubstring(consts.ExceededNamespaceQuotaErrMessage))
+				g.Expect(apiStatus.Status().Message).To(ContainSubstring(consts.ErrExceededClusterQuota.Error()))
+				g.Expect(apiStatus.Status().Message).NotTo(ContainSubstring(consts.ErrExceededNamespaceQuota.Error()))
 
 				// Ensure only the first claim is created
 				s3UserClaimList := &S3UserClaimList{}
@@ -166,8 +166,8 @@ var _ = Describe("", Ordered, ContinueOnFailure, func() {
 				var apiStatus apierrors.APIStatus
 				g.Expect(goerrors.As(err, &apiStatus)).To(BeTrue())
 				g.Expect(apiStatus.Status().Code).To(Equal(int32(http.StatusUnprocessableEntity)))
-				g.Expect(apiStatus.Status().Message).To(ContainSubstring(consts.ExceededClusterQuotaErrMessage))
-				g.Expect(apiStatus.Status().Message).NotTo(ContainSubstring(consts.ExceededNamespaceQuotaErrMessage))
+				g.Expect(apiStatus.Status().Message).To(ContainSubstring(consts.ErrExceededClusterQuota.Error()))
+				g.Expect(apiStatus.Status().Message).NotTo(ContainSubstring(consts.ErrExceededNamespaceQuota.Error()))
 			}).Should(Succeed())
 		})
 
@@ -189,8 +189,8 @@ var _ = Describe("", Ordered, ContinueOnFailure, func() {
 				var apiStatus apierrors.APIStatus
 				g.Expect(goerrors.As(err, &apiStatus)).To(BeTrue())
 				g.Expect(apiStatus.Status().Code).To(Equal(int32(http.StatusUnprocessableEntity)))
-				g.Expect(apiStatus.Status().Message).To(ContainSubstring(consts.ExceededClusterQuotaErrMessage))
-				g.Expect(apiStatus.Status().Message).NotTo(ContainSubstring(consts.ExceededNamespaceQuotaErrMessage))
+				g.Expect(apiStatus.Status().Message).To(ContainSubstring(consts.ErrExceededClusterQuota.Error()))
+				g.Expect(apiStatus.Status().Message).NotTo(ContainSubstring(consts.ErrExceededNamespaceQuota.Error()))
 
 				// Ensure only the first claim is created
 				s3UserClaimList := &S3UserClaimList{}
@@ -219,8 +219,8 @@ var _ = Describe("", Ordered, ContinueOnFailure, func() {
 				var apiStatus apierrors.APIStatus
 				g.Expect(goerrors.As(err, &apiStatus)).To(BeTrue())
 				g.Expect(apiStatus.Status().Code).To(Equal(int32(http.StatusUnprocessableEntity)))
-				g.Expect(apiStatus.Status().Message).To(ContainSubstring(consts.ExceededClusterQuotaErrMessage))
-				g.Expect(apiStatus.Status().Message).NotTo(ContainSubstring(consts.ExceededNamespaceQuotaErrMessage))
+				g.Expect(apiStatus.Status().Message).To(ContainSubstring(consts.ErrExceededClusterQuota.Error()))
+				g.Expect(apiStatus.Status().Message).NotTo(ContainSubstring(consts.ErrExceededNamespaceQuota.Error()))
 			}).Should(Succeed())
 		})
 
@@ -244,8 +244,8 @@ var _ = Describe("", Ordered, ContinueOnFailure, func() {
 				var apiStatus apierrors.APIStatus
 				g.Expect(goerrors.As(err, &apiStatus)).To(BeTrue())
 				g.Expect(apiStatus.Status().Code).To(Equal(int32(http.StatusUnprocessableEntity)))
-				g.Expect(apiStatus.Status().Message).To(ContainSubstring(consts.ExceededClusterQuotaErrMessage))
-				g.Expect(apiStatus.Status().Message).NotTo(ContainSubstring(consts.ExceededNamespaceQuotaErrMessage))
+				g.Expect(apiStatus.Status().Message).To(ContainSubstring(consts.ErrExceededClusterQuota.Error()))
+				g.Expect(apiStatus.Status().Message).NotTo(ContainSubstring(consts.ErrExceededNamespaceQuota.Error()))
 
 				// Ensure only the first claim is created
 				s3UserClaimList := &S3UserClaimList{}
@@ -276,8 +276,8 @@ var _ = Describe("", Ordered, ContinueOnFailure, func() {
 				var apiStatus apierrors.APIStatus
 				g.Expect(goerrors.As(err, &apiStatus)).To(BeTrue())
 				g.Expect(apiStatus.Status().Code).To(Equal(int32(http.StatusUnprocessableEntity)))
-				g.Expect(apiStatus.Status().Message).To(ContainSubstring(consts.ExceededClusterQuotaErrMessage))
-				g.Expect(apiStatus.Status().Message).NotTo(ContainSubstring(consts.ExceededNamespaceQuotaErrMessage))
+				g.Expect(apiStatus.Status().Message).To(ContainSubstring(consts.ErrExceededClusterQuota.Error()))
+				g.Expect(apiStatus.Status().Message).NotTo(ContainSubstring(consts.ErrExceededNamespaceQuota.Error()))
 			}).Should(Succeed())
 		})
 
@@ -300,8 +300,8 @@ var _ = Describe("", Ordered, ContinueOnFailure, func() {
 				var apiStatus apierrors.APIStatus
 				g.Expect(goerrors.As(err, &apiStatus)).To(BeTrue())
 				g.Expect(apiStatus.Status().Code).To(Equal(int32(http.StatusUnprocessableEntity)))
-				g.Expect(apiStatus.Status().Message).To(ContainSubstring(consts.ExceededNamespaceQuotaErrMessage))
-				g.Expect(apiStatus.Status().Message).NotTo(ContainSubstring(consts.ExceededClusterQuotaErrMessage))
+				g.Expect(apiStatus.Status().Message).To(ContainSubstring(consts.ErrExceededNamespaceQuota.Error()))
+				g.Expect(apiStatus.Status().Message).NotTo(ContainSubstring(consts.ErrExceededClusterQuota.Error()))
 
 				// Ensure only the first claim is created
 				s3UserClaimList := &S3UserClaimList{}
@@ -331,8 +331,8 @@ var _ = Describe("", Ordered, ContinueOnFailure, func() {
 				var apiStatus apierrors.APIStatus
 				g.Expect(goerrors.As(err, &apiStatus)).To(BeTrue())
 				g.Expect(apiStatus.Status().Code).To(Equal(int32(http.StatusUnprocessableEntity)))
-				g.Expect(apiStatus.Status().Message).To(ContainSubstring(consts.ExceededNamespaceQuotaErrMessage))
-				g.Expect(apiStatus.Status().Message).NotTo(ContainSubstring(consts.ExceededClusterQuotaErrMessage))
+				g.Expect(apiStatus.Status().Message).To(ContainSubstring(consts.ErrExceededNamespaceQuota.Error()))
+				g.Expect(apiStatus.Status().Message).NotTo(ContainSubstring(consts.ErrExceededClusterQuota.Error()))
 			}).Should(Succeed())
 		})
 
@@ -355,8 +355,8 @@ var _ = Describe("", Ordered, ContinueOnFailure, func() {
 				var apiStatus apierrors.APIStatus
 				g.Expect(goerrors.As(err, &apiStatus)).To(BeTrue())
 				g.Expect(apiStatus.Status().Code).To(Equal(int32(http.StatusUnprocessableEntity)))
-				g.Expect(apiStatus.Status().Message).To(ContainSubstring(consts.ExceededNamespaceQuotaErrMessage))
-				g.Expect(apiStatus.Status().Message).NotTo(ContainSubstring(consts.ExceededClusterQuotaErrMessage))
+				g.Expect(apiStatus.Status().Message).To(ContainSubstring(consts.ErrExceededNamespaceQuota.Error()))
+				g.Expect(apiStatus.Status().Message).NotTo(ContainSubstring(consts.ErrExceededClusterQuota.Error()))
 
 				// Ensure only the first claim is created
 				s3UserClaimList := &S3UserClaimList{}
@@ -386,8 +386,8 @@ var _ = Describe("", Ordered, ContinueOnFailure, func() {
 				var apiStatus apierrors.APIStatus
 				g.Expect(goerrors.As(err, &apiStatus)).To(BeTrue())
 				g.Expect(apiStatus.Status().Code).To(Equal(int32(http.StatusUnprocessableEntity)))
-				g.Expect(apiStatus.Status().Message).To(ContainSubstring(consts.ExceededNamespaceQuotaErrMessage))
-				g.Expect(apiStatus.Status().Message).NotTo(ContainSubstring(consts.ExceededClusterQuotaErrMessage))
+				g.Expect(apiStatus.Status().Message).To(ContainSubstring(consts.ErrExceededNamespaceQuota.Error()))
+				g.Expect(apiStatus.Status().Message).NotTo(ContainSubstring(consts.ErrExceededClusterQuota.Error()))
 			}).Should(Succeed())
 		})
 
@@ -412,8 +412,8 @@ var _ = Describe("", Ordered, ContinueOnFailure, func() {
 				var apiStatus apierrors.APIStatus
 				g.Expect(goerrors.As(err, &apiStatus)).To(BeTrue())
 				g.Expect(apiStatus.Status().Code).To(Equal(int32(http.StatusUnprocessableEntity)))
-				g.Expect(apiStatus.Status().Message).To(ContainSubstring(consts.ExceededNamespaceQuotaErrMessage))
-				g.Expect(apiStatus.Status().Message).NotTo(ContainSubstring(consts.ExceededClusterQuotaErrMessage))
+				g.Expect(apiStatus.Status().Message).To(ContainSubstring(consts.ErrExceededNamespaceQuota.Error()))
+				g.Expect(apiStatus.Status().Message).NotTo(ContainSubstring(consts.ErrExceededClusterQuota.Error()))
 
 				// Ensure only the first claim is created
 				s3UserClaimList := &S3UserClaimList{}
@@ -445,8 +445,8 @@ var _ = Describe("", Ordered, ContinueOnFailure, func() {
 				var apiStatus apierrors.APIStatus
 				g.Expect(goerrors.As(err, &apiStatus)).To(BeTrue())
 				g.Expect(apiStatus.Status().Code).To(Equal(int32(http.StatusUnprocessableEntity)))
-				g.Expect(apiStatus.Status().Message).To(ContainSubstring(consts.ExceededNamespaceQuotaErrMessage))
-				g.Expect(apiStatus.Status().Message).NotTo(ContainSubstring(consts.ExceededClusterQuotaErrMessage))
+				g.Expect(apiStatus.Status().Message).To(ContainSubstring(consts.ErrExceededNamespaceQuota.Error()))
+				g.Expect(apiStatus.Status().Message).NotTo(ContainSubstring(consts.ErrExceededClusterQuota.Error()))
 			}).Should(Succeed())
 		})
 
@@ -499,6 +499,34 @@ var _ = Describe("", Ordered, ContinueOnFailure, func() {
 				}).Should(Succeed())
 			},
 		)
+	})
+
+	Context("When creating S3UserClaim without ClusterResourceQuota", func() {
+		// Deny scenarios
+		It("Should deny", func() {
+			const (
+				ns   = "new-ns"
+				team = "new-team"
+			)
+			Expect(k8sClient.Create(ctx, &v1.Namespace{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:   ns,
+					Labels: map[string]string{consts.LabelTeam: team},
+				},
+			})).To(Succeed())
+			s3UserClaim := getS3UserClaim(s3UserClaimName, ns, &UserQuota{
+				MaxSize:    resource.MustParse("1k"),
+				MaxObjects: resource.MustParse("1k"),
+			})
+
+			err := k8sClient.Create(ctx, s3UserClaim)
+			var apiStatus apierrors.APIStatus
+			Expect(goerrors.As(err, &apiStatus)).To(BeTrue())
+			Expect(apiStatus.Status().Code).To(Equal(int32(http.StatusUnprocessableEntity)))
+			Expect(apiStatus.Status().Message).To(ContainSubstring(consts.ErrClusterQuotaNotDefined.Error()))
+			Expect(apiStatus.Status().Message).NotTo(ContainSubstring(consts.ErrExceededClusterQuota.Error()))
+			Expect(apiStatus.Status().Message).NotTo(ContainSubstring(consts.ErrExceededNamespaceQuota.Error()))
+		})
 	})
 })
 

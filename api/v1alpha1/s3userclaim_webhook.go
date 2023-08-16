@@ -18,6 +18,7 @@ package v1alpha1
 
 import (
 	"context"
+	goerrors "errors"
 	"fmt"
 	"time"
 
@@ -118,30 +119,32 @@ func validateQuota(suc *S3UserClaim) field.ErrorList {
 
 	// TODO(therealak12): refactor the code as there are similarities between two quota validator functions
 
-	exceeded, err := validateAgainstNamespaceQuota(ctx, suc)
-	if err != nil {
-		s3userclaimlog.Error(err, "failed to validate against namespace quota")
-		errorList = append(errorList, field.InternalError(quotaFieldPath, fmt.Errorf(consts.ContactCloudTeamErrMessage)))
-	} else if exceeded {
-		errorList = append(errorList, field.Forbidden(quotaFieldPath, consts.ExceededNamespaceQuotaErrMessage))
-	}
-
-	exceeded, err = validateAgainstClusterQuota(ctx, suc)
-	if err != nil {
+	switch err := validateAgainstNamespaceQuota(ctx, suc); {
+	case err == consts.ErrExceededNamespaceQuota:
+		errorList = append(errorList, field.Forbidden(quotaFieldPath, err.Error()))
+	case err != nil:
 		s3userclaimlog.Error(err, "failed to validate against cluster quota")
 		errorList = append(errorList, field.InternalError(quotaFieldPath, fmt.Errorf(consts.ContactCloudTeamErrMessage)))
-	} else if exceeded {
-		errorList = append(errorList, field.Forbidden(quotaFieldPath, consts.ExceededClusterQuotaErrMessage))
+	}
+
+	switch err := validateAgainstClusterQuota(ctx, suc); {
+	case err == consts.ErrExceededClusterQuota:
+		errorList = append(errorList, field.Forbidden(quotaFieldPath, err.Error()))
+	case goerrors.Is(err, consts.ErrClusterQuotaNotDefined):
+		errorList = append(errorList, field.Forbidden(quotaFieldPath, err.Error()))
+	case err != nil:
+		s3userclaimlog.Error(err, "failed to validate against cluster quota")
+		errorList = append(errorList, field.InternalError(quotaFieldPath, fmt.Errorf(consts.ContactCloudTeamErrMessage)))
 	}
 
 	return errorList
 }
 
-func validateAgainstNamespaceQuota(ctx context.Context, suc *S3UserClaim) (bool, error) {
+func validateAgainstNamespaceQuota(ctx context.Context, suc *S3UserClaim) error {
 	// List all s3UserClaims in the namespace
 	s3UserClaimList := &S3UserClaimList{}
 	if err := uncachedReader.List(ctx, s3UserClaimList, client.InNamespace(suc.Namespace)); err != nil {
-		return false, fmt.Errorf("failed to list s3 user claims, %w", err)
+		return fmt.Errorf("failed to list s3 user claims, %w", err)
 	}
 
 	// Sum all resource requests
@@ -163,38 +166,41 @@ func validateAgainstNamespaceQuota(ctx context.Context, suc *S3UserClaim) (bool,
 	resourceQuotaList := &v1.ResourceQuotaList{}
 	err := runtimeClient.List(ctx, resourceQuotaList, client.InNamespace(suc.Namespace))
 	if err != nil {
-		return false, fmt.Errorf("failed to list resource quotas, %w", err)
+		return fmt.Errorf("failed to list resource quotas, %w", err)
 	}
 	for _, quota := range resourceQuotaList.Items {
 		if maxObjects, ok := quota.Spec.Hard[consts.ResourceNameS3MaxObjects]; ok {
 			if totalMaxObjects.Cmp(maxObjects) > 0 {
-				return true, nil
+				return consts.ErrExceededNamespaceQuota
 			}
 		}
 		if maxSize, ok := quota.Spec.Hard[consts.ResourceNameS3MaxSize]; ok {
 			if totalMaxSize.Cmp(maxSize) > 0 {
-				return true, nil
+				return consts.ErrExceededNamespaceQuota
 			}
 		}
 		if maxBuckets, ok := quota.Spec.Hard[consts.ResourceNameS3MaxBuckets]; ok {
 			if totalMaxBuckets > maxBuckets.Value() {
-				return true, nil
+				return consts.ErrExceededNamespaceQuota
 			}
 		}
 	}
 
-	return false, nil
+	return nil
 }
 
-func validateAgainstClusterQuota(ctx context.Context, suc *S3UserClaim) (bool, error) {
+func validateAgainstClusterQuota(ctx context.Context, suc *S3UserClaim) error {
 	// Find team's clusterResourceQuota
 	team, err := findTeam(ctx, suc)
 	if err != nil {
-		return false, fmt.Errorf("faield to find team, %w", err)
+		return fmt.Errorf("failed to find team, %w", err)
 	}
 	clusterQuota := &openshiftquota.ClusterResourceQuota{}
 	if err := runtimeClient.Get(ctx, types.NamespacedName{Name: team}, clusterQuota); err != nil {
-		return false, fmt.Errorf("failed to get clusterQuota, %w", err)
+		if apierrors.IsNotFound(err) {
+			return fmt.Errorf("%w, team=%s", consts.ErrClusterQuotaNotDefined, team)
+		}
+		return fmt.Errorf("failed to get clusterQuota, %w", err)
 	}
 
 	// Sum all resource requests in team's namespaces
@@ -203,12 +209,12 @@ func validateAgainstClusterQuota(ctx context.Context, suc *S3UserClaim) (bool, e
 	totalMaxBuckets := int64(0)
 	namespaces, err := findTeamNamespaces(ctx, team)
 	if err != nil {
-		return false, fmt.Errorf("failed to find team namespaces, %w", err)
+		return fmt.Errorf("failed to find team namespaces, %w", err)
 	}
 	for _, ns := range namespaces {
 		s3UserClaimList := &S3UserClaimList{}
 		if err := uncachedReader.List(ctx, s3UserClaimList, client.InNamespace(ns)); err != nil {
-			return false, fmt.Errorf("failed to list s3UserClaims, %w", err)
+			return fmt.Errorf("failed to list s3UserClaims, %w", err)
 		}
 
 		for _, claim := range s3UserClaimList.Items {
@@ -226,21 +232,27 @@ func validateAgainstClusterQuota(ctx context.Context, suc *S3UserClaim) (bool, e
 	// Validate against clusterResourceQuota
 	if maxObjects, ok := clusterQuota.Spec.Quota.Hard[consts.ResourceNameS3MaxObjects]; ok {
 		if totalMaxObjects.Cmp(maxObjects) > 0 {
-			return true, nil
+			return consts.ErrExceededClusterQuota
 		}
+	} else {
+		return fmt.Errorf("%w, team=%s", consts.ErrClusterQuotaNotDefined, team)
 	}
 	if maxSize, ok := clusterQuota.Spec.Quota.Hard[consts.ResourceNameS3MaxSize]; ok {
 		if totalMaxSize.Cmp(maxSize) > 0 {
-			return true, nil
+			return consts.ErrExceededClusterQuota
 		}
+	} else {
+		return fmt.Errorf("%w, team=%s", consts.ErrClusterQuotaNotDefined, team)
 	}
 	if maxBuckets, ok := clusterQuota.Spec.Quota.Hard[consts.ResourceNameS3MaxBuckets]; ok {
 		if totalMaxBuckets > maxBuckets.Value() {
-			return true, nil
+			return consts.ErrExceededClusterQuota
 		}
+	} else {
+		return fmt.Errorf("%w, team=%s", consts.ErrClusterQuotaNotDefined, team)
 	}
 
-	return false, nil
+	return nil
 }
 
 func findTeam(ctx context.Context, suc *S3UserClaim) (string, error) {
