@@ -22,7 +22,7 @@ const (
 
 	ErrExceededClusterQuota        = CustomError("exceeded cluster quota")
 	ErrExceededNamespaceQuota      = CustomError("exceeded namespace quota")
-	ErrClusterQuotaNotDefined      = CustomError("cluter quota is not defined")
+	ErrClusterQuotaNotDefined      = CustomError("cluster quota is not defined")
 	S3UserClassImmutableErrMessage = "s3UserClass is immutable"
 	ContactCloudTeamErrMessage     = "please contact the cloud team"
 

@@ -32,7 +32,7 @@ type S3UserClaimSpec struct {
 	AdminSecret string `json:"adminSecret"`
 
 	// +kubebuilder:validation:Optional
-	// +kubebuilder:default:={"maxSize":"1000", "maxObjects":"5368709120", "maxBuckets": 2}
+	// +kubebuilder:default:={"maxSize":"5368709120", "maxObjects":"1000", "maxBuckets": 2}
 	Quota *UserQuota `json:"quota,omitempty"`
 }
 
