@@ -58,8 +58,8 @@ spec:
               quota:
                 default:
                   maxBuckets: 2
-                  maxObjects: "5368709120"
-                  maxSize: "1000"
+                  maxObjects: "1000"
+                  maxSize: "5368709120"
                 description: UserQuota specifies the quota for a user in Ceph
                 properties:
                   maxBuckets:
