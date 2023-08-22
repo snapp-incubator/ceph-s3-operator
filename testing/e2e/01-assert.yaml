@@ -1,0 +1,21 @@
+apiVersion: s3.snappcloud.io/v1alpha1
+kind: S3UserClaim
+metadata:
+  name: s3userclaim-sample
+status:
+  quota:
+    maxSize: 1k
+    maxObjects: 1k
+    maxBuckets: 5
+
+# ---
+
+# apiVersion: s3.snappcloud.io/v1alpha1
+# kind: S3User
+# metadata:
+#   name: s3-test.s3userclaim-sample
+# spec:
+#   quota:
+#     maxSize: 1k
+#     maxObjects: 1k
+#     maxBuckets: 5

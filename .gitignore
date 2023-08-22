@@ -30,3 +30,9 @@ vendor/
 testing/go*.tar.gz
 # Container id files of dev env containers
 testing/.run.*
+
+# KIND
+kind-logs*
+
+# Kubeconfig
+kubeconfig
