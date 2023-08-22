@@ -1,0 +1,10 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestSuite
+startKIND: true
+kindConfig: "./kind-config.yaml"
+crdDir: "./config/crd/bases"
+testDirs:
+- "./testing/"
+# parallel: 3
+timeout: 300
+
