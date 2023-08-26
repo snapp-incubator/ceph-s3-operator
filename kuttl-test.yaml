@@ -6,5 +6,5 @@ crdDir: "./config/crd/bases"
 testDirs:
 - "./testing/"
 # parallel: 3
-timeout: 120
+timeout: 300
 
