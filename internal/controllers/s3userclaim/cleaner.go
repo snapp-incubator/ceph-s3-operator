@@ -8,6 +8,7 @@ import (
 	"github.com/opdev/subreconciler"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/utils/pointer"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
@@ -34,7 +35,7 @@ func (r *Reconciler) Cleanup(ctx context.Context) (ctrl.Result, error) {
 }
 
 func (r *Reconciler) removeCephUser(ctx context.Context) (*ctrl.Result, error) {
-	switch err := r.rgwClient.RemoveUser(ctx, admin.User{ID: r.cephUserFullId}); {
+	switch err := r.rgwClient.RemoveUser(ctx, admin.User{ID: r.cephUserFullId, PurgeData: pointer.Int(1)}); {
 	case goerrors.Is(err, admin.ErrNoSuchUser):
 		return subreconciler.ContinueReconciling()
 	case err != nil:

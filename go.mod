@@ -3,6 +3,7 @@ module github.com/snapp-incubator/s3-operator
 go 1.20
 
 require (
+	github.com/aws/aws-sdk-go v1.44.275
 	github.com/ceph/go-ceph v0.22.0
 	github.com/go-logr/logr v1.2.3
 	github.com/knadh/koanf/parsers/yaml v0.1.0
@@ -13,7 +14,6 @@ require (
 	github.com/onsi/gomega v1.27.4
 	github.com/opdev/subreconciler v0.0.0-20230302151718-c4c8b5ec17c5
 	github.com/openshift/api v0.0.0-20230503113241-06ec0523a98b
-	github.com/stretchr/testify v1.8.4
 	k8s.io/api v0.26.1
 	k8s.io/apimachinery v0.26.1
 	k8s.io/apiserver v0.26.0
@@ -23,7 +23,6 @@ require (
 )
 
 require (
-	github.com/aws/aws-sdk-go v1.44.275 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/blang/semver/v4 v4.0.0 // indirect
 	github.com/cenkalti/backoff/v4 v4.1.3 // indirect
@@ -66,13 +65,11 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
-	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/prometheus/client_golang v1.14.0 // indirect
 	github.com/prometheus/client_model v0.3.0 // indirect
 	github.com/prometheus/common v0.37.0 // indirect
 	github.com/prometheus/procfs v0.8.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
-	github.com/stretchr/objx v0.5.0 // indirect
 	go.etcd.io/etcd/api/v3 v3.5.5 // indirect
 	go.etcd.io/etcd/client/pkg/v3 v3.5.5 // indirect
 	go.etcd.io/etcd/client/v3 v3.5.5 // indirect
