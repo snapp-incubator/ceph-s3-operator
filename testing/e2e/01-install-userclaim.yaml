@@ -2,11 +2,12 @@ apiVersion: s3.snappcloud.io/v1alpha1
 kind: S3UserClaim
 metadata:
   name: s3userclaim-sample
+  namespace: s3-test
 spec:
   s3UserClass: ceph-default
   readonlySecret: s3-sample-readonly-secret
   adminSecret: s3-sample-admin-secret
   quota:
-    maxSize: 1000
-    maxObjects: 1000
+    maxSize: 100
+    maxObjects: 100
     maxBuckets: 5

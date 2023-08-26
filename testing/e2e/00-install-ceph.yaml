@@ -1,6 +1,0 @@
-apiVersion: kuttl.dev/v1beta1
-kind: TestStep
-commands:
-  - command: make -C ../../ setup-dev-env 
-  - command: make -C ../../ run
-    background: true
