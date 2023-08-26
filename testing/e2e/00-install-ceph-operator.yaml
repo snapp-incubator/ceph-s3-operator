@@ -1,0 +1,17 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestStep
+commands:
+  # Apply clusrter resource quota crd
+  - command: kubectl apply -f ../../config/external-crd
+  # Setup local ceph cluster as a docker container on host
+  - command: make -C ../../ setup-dev-env
+  # Run the s3-operator on localhost on port 8000 in the background
+  - command: make -C ../../ run
+    background: true
+  - command: kubectl create namespace s3-test
+  # The namespace should have the team label for the cluster resource quota
+  - command: kubectl label namespace s3-test snappcloud.io/team=myteam
+  # Wait till the s3-operator is up
+  - command: sleep 10
+
+

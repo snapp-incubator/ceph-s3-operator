@@ -1,0 +1,14 @@
+apiVersion: quota.openshift.io/v1
+kind: ClusterResourceQuota
+metadata:
+  name: myteam
+spec:
+  quota:
+    hard:
+      s3/objects: 5k
+      s3/size: 5k
+      s3/buckets: 5k
+  selector:
+    labels:
+      matchLabels:
+        snappcloud.io/team: myteam
