@@ -43,5 +43,6 @@ jobs:
       - name: Run e2e test
         run: kuttl test
       - name: Test teardown
-        run: make teardown-dev-env
-
+        run: |
+          make teardown-dev-env
+          make teardown-operator
