@@ -20,8 +20,13 @@ import (
 	"context"
 	goerrors "errors"
 	"fmt"
+	"net/http"
 	"regexp"
+	"time"
 
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/awserr"
+	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/ceph/go-ceph/rgw/admin"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -35,6 +40,9 @@ import (
 	s3v1alpha1 "github.com/snapp-incubator/s3-operator/api/v1alpha1"
 	"github.com/snapp-incubator/s3-operator/internal/config"
 	"github.com/snapp-incubator/s3-operator/pkg/consts"
+
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/s3"
 )
 
 var _ = Describe("S3UserClaim Controller", func() {
@@ -270,4 +278,145 @@ var _ = Describe("S3UserClaim Controller", func() {
 			}).Should(Succeed())
 		})
 	})
+
+	Context("When removing a S3UserClaim", func() {
+		BeforeEach(func() {
+			s3UserClaim = getS3UserClaim()
+
+			s3User = &s3v1alpha1.S3User{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: s3UserName,
+				},
+			}
+
+			adminSecret = &v1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      adminSecretName,
+					Namespace: s3UserClaimNamespace,
+				},
+			}
+
+			readonlySecret = &v1.Secret{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      readonlySecretName,
+					Namespace: s3UserClaimNamespace,
+				},
+			}
+			Expect(k8sClient.Create(ctx, s3UserClaim)).To(Succeed())
+			Eventually(func(g Gomega) {
+				_, err := co.GetUser(ctx, cephUser)
+				g.Expect(err).To(BeNil())
+			}).Should(Succeed())
+		})
+
+		It("Should remove the Ceph user without buckets", func() {
+			By("Expect to delete the S3UserClaim successfully")
+			Eventually(func(g Gomega) {
+				g.Expect(k8sClient.Delete(ctx, s3UserClaim)).To(Succeed())
+			}).Should(Succeed())
+
+			By("Expect the related objects are cleaned up by the controller")
+			Eventually(func(g Gomega) {
+				g.Expect(
+					apierrors.IsNotFound(k8sClient.Get(ctx, types.NamespacedName{Name: s3User.Name}, s3User)),
+				).To(BeTrue())
+
+				g.Expect(k8sClient.Delete(ctx, adminSecret)).To(Succeed())
+				g.Expect(k8sClient.Delete(ctx, readonlySecret)).To(Succeed())
+
+				_, err := rgwClient.GetUser(ctx, cephUser)
+				g.Expect(goerrors.Is(err, admin.ErrNoSuchUser)).To(BeTrue())
+			}).Should(Succeed())
+		})
+
+		It("Should remove the Ceph user with buckets", func() {
+			gotCephUser, err := rgwClient.GetUser(ctx, cephUser)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(len(gotCephUser.Keys)).To(Equal(2))
+			var s3Keys admin.UserKeySpec
+			if gotCephUser.Keys[0].User == cephUser.ID {
+				s3Keys = gotCephUser.Keys[0]
+			} else if gotCephUser.Keys[1].User == cephUser.ID {
+				s3Keys = gotCephUser.Keys[1]
+			} else {
+				Fail("failed to find the expected ceph user")
+			}
+
+			s3Agent, err := newS3Agent(s3Keys.AccessKey, s3Keys.SecretKey, cfg.Rgw.Endpoint, true)
+			Expect(err).To(BeNil())
+			Expect(s3Agent.createBucket("test-bucket")).To(Succeed())
+
+			By("Expect to delete the S3UserClaim successfully")
+			Eventually(func(g Gomega) {
+				g.Expect(k8sClient.Delete(ctx, s3UserClaim)).To(Succeed())
+			}).Should(Succeed())
+
+			By("Expect the related objects are cleaned up by the controller")
+			Eventually(func(g Gomega) {
+				g.Expect(
+					apierrors.IsNotFound(k8sClient.Get(ctx, types.NamespacedName{Name: s3User.Name}, s3User)),
+				).To(BeTrue())
+
+				g.Expect(k8sClient.Delete(ctx, adminSecret)).To(Succeed())
+				g.Expect(k8sClient.Delete(ctx, readonlySecret)).To(Succeed())
+
+				_, err := rgwClient.GetUser(ctx, cephUser)
+				g.Expect(goerrors.Is(err, admin.ErrNoSuchUser)).To(BeTrue())
+			}).Should(Succeed())
+		})
+	})
 })
+
+// S3Agent wraps the s3.S3 structure to allow for wrapper methods
+type S3Agent struct {
+	Client *s3.S3
+}
+
+func newS3Agent(accessKey, secretKey, endpoint string, debug bool) (*S3Agent, error) {
+	const cephRegion = "us-east-1"
+
+	logLevel := aws.LogOff
+	if debug {
+		logLevel = aws.LogDebug
+	}
+	client := http.Client{
+		Timeout: time.Second * 15,
+	}
+	sess, err := session.NewSession(
+		aws.NewConfig().
+			WithRegion(cephRegion).
+			WithCredentials(credentials.NewStaticCredentials(accessKey, secretKey, "")).
+			WithEndpoint(endpoint).
+			WithS3ForcePathStyle(true).
+			WithMaxRetries(5).
+			WithDisableSSL(true).
+			WithHTTPClient(&client).
+			WithLogLevel(logLevel),
+	)
+	if err != nil {
+		return nil, err
+	}
+	svc := s3.New(sess)
+	return &S3Agent{
+		Client: svc,
+	}, nil
+}
+
+func (s *S3Agent) createBucket(name string) error {
+	bucketInput := &s3.CreateBucketInput{
+		Bucket: &name,
+	}
+	_, err := s.Client.CreateBucket(bucketInput)
+	if err != nil {
+		if aerr, ok := err.(awserr.Error); ok {
+			switch aerr.Code() {
+			case s3.ErrCodeBucketAlreadyExists:
+				return nil
+			case s3.ErrCodeBucketAlreadyOwnedByYou:
+				return nil
+			}
+		}
+		return fmt.Errorf("failed to create bucket %q. %w", name, err)
+	}
+	return nil
+}
