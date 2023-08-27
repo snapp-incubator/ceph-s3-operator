@@ -285,14 +285,16 @@ setup-dev-env:
 teardown-dev-env:
 	docker rm -f test_ceph_a
 	docker network rm test_ceph_net
+
+# Teardown the operator in case of running: make run
+.PHONY: teardown-operator
+teardown-operator:
 	@if pgrep -x "main" > /dev/null; then \
 		echo "Killing the 'main' process..."; \
 		kill `pgrep main`; \
 	else \
 		echo "The 'main' process is not running."; \
 	fi
-
-
 ######################### Helmify
 HELMIFY ?= $(LOCALBIN)/helmify
 
