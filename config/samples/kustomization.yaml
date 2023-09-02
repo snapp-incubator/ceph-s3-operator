@@ -2,4 +2,5 @@
 resources:
 - s3_v1alpha1_s3userclaim.yaml
 - s3_v1alpha1_s3user.yaml
+- s3_v1alpha1_s3bucket.yaml
 #+kubebuilder:scaffold:manifestskustomizesamples
