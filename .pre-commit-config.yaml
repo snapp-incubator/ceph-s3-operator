@@ -1,0 +1,12 @@
+- repo: https://github.com/golangci/golangci-lint
+  # version.
+  rev: v1.54.2
+  hooks:
+  - id: golangci-lint
+    name: golangci-lint
+    description: Fast linters runner for Go.
+    entry: golangci-lint run 
+    types: [go]
+    language: golang
+    require_serial: true
+    pass_filenames: false
