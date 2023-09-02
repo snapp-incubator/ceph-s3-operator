@@ -9,9 +9,10 @@ import (
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/opdev/subreconciler"
-	s3v1alpha1 "github.com/snapp-incubator/s3-operator/api/v1alpha1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	ctrl "sigs.k8s.io/controller-runtime"
+
+	s3v1alpha1 "github.com/snapp-incubator/s3-operator/api/v1alpha1"
 )
 
 // Provision provisions the required resources for the s3UserClaim object
