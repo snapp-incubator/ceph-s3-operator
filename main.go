@@ -113,10 +113,17 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Setup operators
+	// Setup S3userclaim operator
 	s3UserClaimReconciler := s3userclaim.NewReconciler(mgr, cfg, co)
 	if err = s3UserClaimReconciler.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "S3UserClaim")
+		os.Exit(1)
+	}
+
+	// Setup s3bucket operator
+	S3BucketReconciler := s3bucket.NewReconciler(mgr, cfg, co)
+	if err = S3BucketReconciler.SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "S3Bucket")
 		os.Exit(1)
 	}
 
@@ -128,13 +135,7 @@ func main() {
 			os.Exit(1)
 		}
 	}
-	if err = (&s3bucket.S3BucketReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "S3Bucket")
-		os.Exit(1)
-	}
+
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {

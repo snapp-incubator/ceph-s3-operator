@@ -46,7 +46,7 @@ spec:
             description: S3BucketStatus defines the observed state of S3Bucket
             properties:
               ready:
-                type: string
+                type: boolean
             type: object
         type: object
     served: true
