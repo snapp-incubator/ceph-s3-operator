@@ -35,8 +35,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	s3v1alpha1 "github.com/snapp-incubator/s3-operator/api/v1alpha1"
-	"github.com/snapp-incubator/s3-operator/controllers"
 	"github.com/snapp-incubator/s3-operator/internal/config"
+	"github.com/snapp-incubator/s3-operator/internal/controllers/s3bucket"
 	"github.com/snapp-incubator/s3-operator/internal/controllers/s3userclaim"
 	//+kubebuilder:scaffold:imports
 )
@@ -128,7 +128,7 @@ func main() {
 			os.Exit(1)
 		}
 	}
-	if err = (&controllers.S3BucketReconciler{
+	if err = (&s3bucket.S3BucketReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
