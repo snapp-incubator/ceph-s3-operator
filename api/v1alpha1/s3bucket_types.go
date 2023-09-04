@@ -22,21 +22,25 @@ import (
 
 // S3BucketSpec defines the desired state of S3Bucket
 type S3BucketSpec struct {
-	// +kubebuilder:validation:Optional
-	S3ClassName string `json:"s3ClassName,omitempty"`
-
 	// +kubebuilder:validation:Required
-	S3UserName string `json:"s3UserName"`
+	S3UserRef string `json:"s3UserRef"`
+
+	// +kubebuilder:validation:Optional
+	// +kubebuilder:validation:Enum=delete;retain
+	// +kubebuilder:default=delete
+	S3DeletionPolicy string `json:"s3DeletionPolicy,omitempty"`
 }
 
 // S3BucketStatus defines the observed state of S3Bucket
 type S3BucketStatus struct {
 	// +kubebuilder:validation:Optional
+	// +kubebuilder:default=false
 	Ready bool `json:"ready,omitempty"`
 }
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+// +kubebuilder:printcolumn:name="S3USERREF",type=string,JSONPath=`.spec.s3UserRef`
 
 // S3Bucket is the Schema for the s3buckets API
 type S3Bucket struct {

@@ -15,7 +15,11 @@ spec:
     singular: s3bucket
   scope: Namespaced
   versions:
-  - name: v1alpha1
+  - additionalPrinterColumns:
+    - jsonPath: .spec.s3UserRef
+      name: S3USERREF
+      type: string
+    name: v1alpha1
     schema:
       openAPIV3Schema:
         description: S3Bucket is the Schema for the s3buckets API
@@ -35,17 +39,22 @@ spec:
           spec:
             description: S3BucketSpec defines the desired state of S3Bucket
             properties:
-              s3ClassName:
+              s3DeletionPolicy:
+                default: delete
+                enum:
+                - delete
+                - retain
                 type: string
-              s3UserName:
+              s3UserRef:
                 type: string
             required:
-            - s3UserName
+            - s3UserRef
             type: object
           status:
             description: S3BucketStatus defines the observed state of S3Bucket
             properties:
               ready:
+                default: false
                 type: boolean
             type: object
         type: object

@@ -9,5 +9,5 @@ metadata:
     app.kubernetes.io/created-by: s3-operator
   name: s3bucket-sample
 spec:
-  s3ClassName: ceph-rbd
-  s3UserName: myuser
+  s3UserRef: s3userclaim-sample
+  s3DeletionPolicy: delete
