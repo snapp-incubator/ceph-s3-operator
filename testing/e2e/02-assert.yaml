@@ -1,0 +1,29 @@
+# Check CR of the delete mode
+apiVersion: s3.snappcloud.io/v1alpha1
+kind: S3Bucket
+metadata:
+  name: s3bucket-sample-delete
+  namespace: s3-test
+status:
+  ready: true
+
+---
+# Check CR of the retain mode
+apiVersion: s3.snappcloud.io/v1alpha1
+kind: S3Bucket
+metadata:
+  name: s3bucket-sample-retain
+  namespace: s3-test
+status:
+  ready: true
+
+---
+# Check if the buckets are existed on s3
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+timeout: 30
+commands:
+- command: 
+
+---
+# Check if user can create or delete object
