@@ -8,6 +8,7 @@ commands:
   # Run the s3-operator on localhost on port 8000 in the background
   - command: make -C ../../ run
     background: true
+    skipLogOutput: true
   - command: kubectl create namespace s3-test
   # The namespace should have the team label for the cluster resource quota
   - command: kubectl label namespace s3-test snappcloud.io/team=myteam

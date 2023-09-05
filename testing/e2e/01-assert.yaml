@@ -25,3 +25,31 @@ spec:
     kind: S3UserClaim
     name: s3userclaim-sample
     namespace: s3-test
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: s3-sample-admin-secret
+  namespace: s3-test
+  ownerReferences:
+  - apiVersion: s3.snappcloud.io/v1alpha1
+    blockOwnerDeletion: true
+    controller: true
+    kind: S3UserClaim
+    name: s3userclaim-sample
+type: Opaque
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: s3-sample-readonly-secret
+  namespace: s3-test
+  ownerReferences:
+  - apiVersion: s3.snappcloud.io/v1alpha1
+    blockOwnerDeletion: true
+    controller: true
+    kind: S3UserClaim
+    name: s3userclaim-sample
+type: Opaque
