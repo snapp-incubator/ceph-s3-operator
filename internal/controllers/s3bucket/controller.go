@@ -25,11 +25,12 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
-	"github.com/ceph/go-ceph/rgw/admin"
 	"github.com/go-logr/logr"
 	"github.com/opdev/subreconciler"
+	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -37,6 +38,7 @@ import (
 
 	s3v1alpha1 "github.com/snapp-incubator/s3-operator/api/v1alpha1"
 	"github.com/snapp-incubator/s3-operator/internal/config"
+	"github.com/snapp-incubator/s3-operator/pkg/consts"
 )
 
 // S3Agent wraps the s3.S3 structure to allow for wrapper methods
@@ -90,45 +92,50 @@ func (s *S3Agent) deleteBucket(name string) error {
 	return err
 }
 
+func (r *Reconciler) setS3Agent(ctx context.Context, req ctrl.Request) error {
+	// Set the s3Agent regarding the secret of the s3UserClaim
+	s3userclaim := &s3v1alpha1.S3UserClaim{}
+	s3userClaimNamespacedName := types.NamespacedName{Namespace: req.Namespace, Name: r.s3UserRef}
+	err := r.Get(ctx, s3userClaimNamespacedName, s3userclaim)
+	if err != nil {
+		return err
+	}
+
+	userAdminSecret := &corev1.Secret{}
+	secretNamespacedName := types.NamespacedName{Namespace: req.NamespacedName.Namespace, Name: s3userclaim.Spec.AdminSecret}
+	err = r.Get(ctx, secretNamespacedName, userAdminSecret)
+	if err != nil {
+		return err
+	}
+
+	accessKey := string(userAdminSecret.Data[consts.DataKeyAccessKey])
+	secretKey := string(userAdminSecret.Data[consts.DataKeySecretKey])
+	r.s3Agent, err = newS3Agent(accessKey, secretKey, r.rgwEndpoint, true)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // S3BucketReconciler reconciles a S3Bucket object
 type Reconciler struct {
 	client.Client
-	scheme    *runtime.Scheme
-	logger    logr.Logger
-	rgwClient *admin.API
-
+	scheme  *runtime.Scheme
+	logger  logr.Logger
+	s3Agent *S3Agent
 	// reconcile specific variables
-	s3Bucket             *s3v1alpha1.S3Bucket
-	cephUser             admin.User
-	s3UserClaimNamespace string
-	cephTenant           string
-	cephUserId           string
-	cephUserFullId       string
-	cephDisplayName      string
-	s3UserName           string
-	s3Agent              S3Agent
-	s3BucketName         string
-	// configurations
-	clusterName  string
-	rgwAccessKey string
-	rgwSecretKey string
+	s3Bucket     *s3v1alpha1.S3Bucket
+	s3UserRef    string
+	s3BucketName string
 	rgwEndpoint  string
 }
 
-func NewReconciler(mgr manager.Manager, cfg *config.Config, rgwClient *admin.API) *Reconciler {
-	s3Agent, err := newS3Agent(cfg.Rgw.AccessKey, cfg.Rgw.SecretKey, cfg.Rgw.Endpoint, true)
-	if err != nil {
-		return nil
-	}
+func NewReconciler(mgr manager.Manager, cfg *config.Config) *Reconciler {
+
 	return &Reconciler{
-		Client:       mgr.GetClient(),
-		scheme:       mgr.GetScheme(),
-		rgwClient:    rgwClient,
-		s3Agent:      *s3Agent,
-		clusterName:  cfg.ClusterName,
-		rgwAccessKey: cfg.Rgw.AccessKey,
-		rgwSecretKey: cfg.Rgw.SecretKey,
-		rgwEndpoint:  cfg.Rgw.Endpoint,
+		Client:      mgr.GetClient(),
+		scheme:      mgr.GetScheme(),
+		rgwEndpoint: cfg.Rgw.Endpoint,
 	}
 }
 
@@ -149,7 +156,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	r.logger = log.FromContext(ctx)
 	r.s3Bucket = &s3v1alpha1.S3Bucket{}
 	r.s3BucketName = req.Name
-
 	switch err := r.Get(ctx, req.NamespacedName, r.s3Bucket); {
 	case apierrors.IsNotFound(err):
 		return r.Cleanup(ctx)
@@ -157,6 +163,12 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		r.logger.Error(err, "failed to fetch object")
 		return subreconciler.Evaluate(subreconciler.Requeue())
 	default:
+		r.s3UserRef = r.s3Bucket.Spec.S3UserRef
+		err = r.setS3Agent(ctx, req)
+		if err != nil {
+			r.logger.Error(err, "Failed to login on S3 with the user credentials")
+			return subreconciler.Evaluate(subreconciler.Requeue())
+		}
 		if r.s3Bucket.ObjectMeta.DeletionTimestamp != nil {
 			return r.Cleanup(ctx)
 		}

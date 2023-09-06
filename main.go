@@ -121,7 +121,7 @@ func main() {
 	}
 
 	// Setup s3bucket operator
-	S3BucketReconciler := s3bucket.NewReconciler(mgr, cfg, co)
+	S3BucketReconciler := s3bucket.NewReconciler(mgr, cfg)
 	if err = S3BucketReconciler.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "S3Bucket")
 		os.Exit(1)

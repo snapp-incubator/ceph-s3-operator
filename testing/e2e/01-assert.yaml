@@ -5,7 +5,7 @@ metadata:
   namespace: s3-test
 status:
   quota:
-    maxSize: "100"
+    maxSize: 1k
     maxObjects: "100"
     maxBuckets: 5
 
@@ -17,7 +17,7 @@ metadata:
   name: s3-test.s3userclaim-sample
 spec:
   quota:
-    maxSize: "100"
+    maxSize: 1k
     maxObjects: "100"
     maxBuckets: 5
   claimRef:
