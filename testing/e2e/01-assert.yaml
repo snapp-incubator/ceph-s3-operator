@@ -5,8 +5,8 @@ metadata:
   namespace: s3-test
 status:
   quota:
-    maxSize: 1k
-    maxObjects: "100"
+    maxSize: 5k
+    maxObjects: "500"
     maxBuckets: 5
 
 ---
@@ -17,8 +17,8 @@ metadata:
   name: s3-test.s3userclaim-sample
 spec:
   quota:
-    maxSize: 1k
-    maxObjects: "100"
+    maxSize: 5k
+    maxObjects: "500"
     maxBuckets: 5
   claimRef:
     apiVersion: s3.snappcloud.io/v1alpha1
