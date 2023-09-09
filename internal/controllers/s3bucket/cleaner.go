@@ -9,7 +9,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 )
 
-// Cleanup cleans up the provisioned resources for the s3UserClaim object
+// Cleanup cleans up the provisioned resources for the s3Bucket object
 func (r *Reconciler) Cleanup(ctx context.Context) (ctrl.Result, error) {
 	// Do the actual reconcile work
 	subrecs := []subreconciler.Fn{
