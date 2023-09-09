@@ -6,9 +6,10 @@ import (
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/opdev/subreconciler"
-	"github.com/snapp-incubator/s3-operator/pkg/consts"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
+
+	"github.com/snapp-incubator/s3-operator/pkg/consts"
 )
 
 // Cleanup cleans up the provisioned resources for the s3Bucket object

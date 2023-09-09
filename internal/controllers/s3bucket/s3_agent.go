@@ -9,11 +9,12 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
-	s3v1alpha1 "github.com/snapp-incubator/s3-operator/api/v1alpha1"
-	"github.com/snapp-incubator/s3-operator/pkg/consts"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
+
+	s3v1alpha1 "github.com/snapp-incubator/s3-operator/api/v1alpha1"
+	"github.com/snapp-incubator/s3-operator/pkg/consts"
 )
 
 // S3Agent wraps the s3.S3 structure to allow for wrapper methods

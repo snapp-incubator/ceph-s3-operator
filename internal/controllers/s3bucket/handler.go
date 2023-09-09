@@ -5,14 +5,15 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/opdev/subreconciler"
-	s3v1alpha1 "github.com/snapp-incubator/s3-operator/api/v1alpha1"
-	"github.com/snapp-incubator/s3-operator/internal/config"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
+
+	s3v1alpha1 "github.com/snapp-incubator/s3-operator/api/v1alpha1"
+	"github.com/snapp-incubator/s3-operator/internal/config"
 )
 
 // S3BucketReconciler reconciles a S3Bucket object
