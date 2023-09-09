@@ -18,6 +18,7 @@ package s3bucket
 
 import (
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 
 	s3v1alpha1 "github.com/snapp-incubator/s3-operator/api/v1alpha1"
 )
@@ -26,5 +27,6 @@ import (
 func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&s3v1alpha1.S3Bucket{}).
+		WithEventFilter(predicate.GenerationChangedPredicate{}).
 		Complete(r)
 }

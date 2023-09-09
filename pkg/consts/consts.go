@@ -28,4 +28,8 @@ const (
 
 	FinalizerPrefix             = "s3.snappcloud.io/"
 	S3UserClaimCleanupFinalizer = FinalizerPrefix + "cleanup-s3userclaim"
+	S3BucketCleanupFinalizer    = FinalizerPrefix + "cleanup-s3bucket"
+
+	DeletionPolicyDelete = "delete"
+	DeletionPolicyRetain = "retain"
 )

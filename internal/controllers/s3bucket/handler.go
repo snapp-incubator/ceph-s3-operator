@@ -59,7 +59,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	// Get s3Bucket object
 	switch err := r.Get(ctx, req.NamespacedName, r.s3Bucket); {
 	case apierrors.IsNotFound(err):
-		return r.Cleanup(ctx)
+		r.logger.Info("CR not found.")
+		return ctrl.Result{}, nil
 	case err != nil:
 		r.logger.Error(err, "failed to fetch object")
 		return subreconciler.Evaluate(subreconciler.Requeue())
@@ -75,5 +76,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		}
 	}
 
-	return r.Provision(ctx)
+	if r.s3Bucket.Status.Ready != true {
+		return r.Provision(ctx)
+	}
+	return ctrl.Result{}, nil
 }
