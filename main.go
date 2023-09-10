@@ -134,8 +134,12 @@ func main() {
 			setupLog.Error(err, "unable to create webhook", "webhook", "S3UserClaim")
 			os.Exit(1)
 		}
-	}
 
+		if err = (&s3v1alpha1.S3Bucket{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "S3Bucket")
+			os.Exit(1)
+		}
+	}
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {

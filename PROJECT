@@ -40,4 +40,7 @@ resources:
   kind: S3Bucket
   path: github.com/snapp-incubator/s3-operator/api/v1alpha1
   version: v1alpha1
+  webhooks:
+    validation: true
+    webhookVersion: v1
 version: "3"

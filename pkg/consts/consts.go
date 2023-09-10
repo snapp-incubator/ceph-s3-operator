@@ -24,6 +24,7 @@ const (
 	ErrExceededNamespaceQuota      = CustomError("exceeded namespace quota")
 	ErrClusterQuotaNotDefined      = CustomError("cluster quota is not defined")
 	S3UserClassImmutableErrMessage = "s3UserClass is immutable"
+	S3UserRefImmutableErrMessage   = "s3UserRef is immutable"
 	ContactCloudTeamErrMessage     = "please contact the cloud team"
 
 	FinalizerPrefix             = "s3.snappcloud.io/"

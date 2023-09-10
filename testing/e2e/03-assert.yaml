@@ -1,0 +1,11 @@
+# Check CR of the delete mode
+apiVersion: s3.snappcloud.io/v1alpha1
+kind: S3Bucket
+metadata:
+  name: s3bucket-sample-delete
+  namespace: s3-test
+spec:
+  # User cannot change the s3UserRef
+  s3UserRef: s3userclaim-sample
+status:
+  ready: true

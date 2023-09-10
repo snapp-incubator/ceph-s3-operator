@@ -11,6 +11,26 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
+      path: /validate-s3-snappcloud-io-v1alpha1-s3bucket
+  failurePolicy: Fail
+  name: vs3bucket.kb.io
+  rules:
+  - apiGroups:
+    - s3.snappcloud.io
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - s3buckets
+  sideEffects: None
+- admissionReviewVersions:
+  - v1
+  clientConfig:
+    service:
+      name: webhook-service
+      namespace: system
       path: /validate-s3-snappcloud-io-v1alpha1-s3userclaim
   failurePolicy: Fail
   name: vs3userclaim.kb.io
