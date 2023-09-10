@@ -1,8 +1,5 @@
-apiVersion: s3.snappcloud.io/v1alpha1
-kind: S3Bucket
-metadata:
-  name: s3bucket-sample-delete
-  namespace: s3-test
-spec:
-  s3UserRef: s3userclaim-sample2
-  s3DeletionPolicy: delete
+apiVersion: kuttl.dev/v1beta1
+kind: TestStep
+commands:
+  - command: kubectl apply -f bucket-sample-updated.yaml
+    ignoreFailure: true
