@@ -4,7 +4,7 @@ commands:
   # Apply clusrter resource quota crd
   - command: kubectl apply -f ../../config/external-crd
   # Generate webhook certificats
-  - script: cd ../../ && ./cert-generator.sh
+  - script: cd ../../config/local && ./cert-generator.sh
   # Setup local ceph cluster as a docker container on host
   - command: make -C ../../ setup-dev-env
   # Run the s3-operator on localhost on port 8000 in the background

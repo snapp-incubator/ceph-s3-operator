@@ -13,4 +13,4 @@ mkcert -install
 mkcert -cert-file=$CAROOT/tls.crt -key-file=$CAROOT/tls.key host.minikube.internal 192.168.64.1 host.docker.internal 172.17.0.1
 CA_BUNDLE=$(cat $CAROOT/rootCA.pem | base64 -w 0)
 
-sed -i "s|CA_BUNDLE_PLACEHOLDER|$CA_BUNDLE|" ./config/local/webhook-clientconfig-patch.yaml
+sed -i "s|CA_BUNDLE_PLACEHOLDER|$CA_BUNDLE|" webhook-clientconfig-patch.yaml
