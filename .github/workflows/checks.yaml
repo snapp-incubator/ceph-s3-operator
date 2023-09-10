@@ -40,6 +40,10 @@ jobs:
         run: |
           curl -L https://github.com/kudobuilder/kuttl/releases/download/v0.15.0/kubectl-kuttl_0.15.0_linux_x86_64 -o /usr/local/bin/kuttl
           chmod +x /usr/local/bin/kuttl
+      - name: Install mkcert
+        run: |
+          curl -L https://github.com/FiloSottile/mkcert/releases/download/v1.4.3/mkcert-v1.4.3-linux-amd64 -o /usr/local/bin/mkcert
+          chmod +x /usr/local/bin/mkcert
       - name: Run e2e test
         run: kuttl test
       - name: Test teardown
