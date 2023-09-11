@@ -1,10 +1,10 @@
 - op: replace
   path: /webhooks/0/clientConfig
   value:
-    caBundle: CA_BUNDLE_PLACEHOLDER
+    caBundle: $(CA_BUNDLE)
     url: https://172.17.0.1:9443/validate-s3-snappcloud-io-v1alpha1-s3bucket
 - op: replace
   path: /webhooks/1/clientConfig
   value:
-    caBundle: CA_BUNDLE_PLACEHOLDER
+    caBundle: $(CA_BUNDLE)
     url: https://172.17.0.1:9443/validate-s3-snappcloud-io-v1alpha1-s3userclaim

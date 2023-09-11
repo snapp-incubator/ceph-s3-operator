@@ -36,3 +36,6 @@ kind-logs*
 
 # Kubeconfig
 kubeconfig
+
+# Local env variables
+environment-properties.env
