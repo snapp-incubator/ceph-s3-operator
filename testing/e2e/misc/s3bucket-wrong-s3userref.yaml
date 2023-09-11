@@ -1,0 +1,8 @@
+apiVersion: s3.snappcloud.io/v1alpha1
+kind: S3Bucket
+metadata:
+  name: s3bucket-sample-wrong-s3userref
+  namespace: s3-test
+spec:
+  s3UserRef: s3userclaim-sample-not-available
+  s3DeletionPolicy: delete
