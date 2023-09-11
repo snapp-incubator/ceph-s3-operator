@@ -14,11 +14,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
+	corev1 "k8s.io/api/core/v1"
+
 	s3v1alpha1 "github.com/snapp-incubator/s3-operator/api/v1alpha1"
 	"github.com/snapp-incubator/s3-operator/internal/config"
 	"github.com/snapp-incubator/s3-operator/internal/s3_agent"
 	"github.com/snapp-incubator/s3-operator/pkg/consts"
-	corev1 "k8s.io/api/core/v1"
 )
 
 // S3BucketReconciler reconciles a S3Bucket object
