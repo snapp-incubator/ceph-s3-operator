@@ -22,5 +22,3 @@ Here is the test workflow:
 | 3    | Webhook validation: Delete S3UserClaim                       | Must be **denied** by the user validation delete Webhook.    |
 | 4    | Delete S3Buckets                                             | DeletionPolicy on delete: bucket must **be** deleted.<br />DeletionPolicy on retain: bucket must **not be** deleted. |
 | 5    | Delete S3UserClaim                                           | S3UserClaim and S3User CRs are deleted.                      |
-
-### 

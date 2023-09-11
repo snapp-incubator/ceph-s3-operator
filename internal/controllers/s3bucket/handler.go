@@ -78,11 +78,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		}
 	}
 
-	// Create event; Don't provision the object if it's in the ready status.
-	if r.s3Bucket.Status.Ready != true {
-		return r.Provision(ctx)
-	}
-	return ctrl.Result{}, nil
+	return r.Provision(ctx)
 }
 
 func (r *Reconciler) setS3Agent(ctx context.Context, req ctrl.Request) error {
