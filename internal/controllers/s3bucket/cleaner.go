@@ -34,7 +34,7 @@ func (r *Reconciler) removeOrRetainBucket(ctx context.Context) (*ctrl.Result, er
 	if r.s3Bucket.Spec.S3DeletionPolicy == consts.DeletionPolicyRetain {
 		return subreconciler.ContinueReconciling()
 	}
-	err := r.s3Agent.deleteBucket(r.s3BucketName)
+	err := r.s3Agent.DeleteBucket(r.s3BucketName)
 	if err != nil {
 		if aerr, ok := err.(awserr.Error); ok {
 			switch aerr.Code() {

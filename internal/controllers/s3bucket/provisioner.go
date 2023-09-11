@@ -6,8 +6,6 @@ import (
 
 	genericregistry "k8s.io/apiserver/pkg/registry/generic/registry"
 
-	"github.com/aws/aws-sdk-go/aws/awserr"
-	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/opdev/subreconciler"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -36,17 +34,8 @@ func (r *Reconciler) Provision(ctx context.Context) (ctrl.Result, error) {
 }
 
 func (r *Reconciler) ensureBucket(ctx context.Context) (*ctrl.Result, error) {
-	err := r.s3Agent.createBucket(r.s3Bucket.GetName())
+	err := r.s3Agent.CreateBucket(r.s3Bucket.GetName())
 	if err != nil {
-		if aerr, ok := err.(awserr.Error); ok {
-			switch aerr.Code() {
-			case s3.ErrCodeBucketAlreadyExists:
-				return subreconciler.ContinueReconciling()
-			case s3.ErrCodeBucketAlreadyOwnedByYou:
-				return subreconciler.ContinueReconciling()
-			}
-		}
-		r.logger.Error(err, "failed to create the bucket")
 		return subreconciler.Requeue()
 	}
 	return subreconciler.ContinueReconciling()

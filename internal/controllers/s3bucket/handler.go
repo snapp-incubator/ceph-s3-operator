@@ -2,11 +2,13 @@ package s3bucket
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/go-logr/logr"
 	"github.com/opdev/subreconciler"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/log"
@@ -14,6 +16,9 @@ import (
 
 	s3v1alpha1 "github.com/snapp-incubator/s3-operator/api/v1alpha1"
 	"github.com/snapp-incubator/s3-operator/internal/config"
+	"github.com/snapp-incubator/s3-operator/internal/s3_agent"
+	"github.com/snapp-incubator/s3-operator/pkg/consts"
+	corev1 "k8s.io/api/core/v1"
 )
 
 // S3BucketReconciler reconciles a S3Bucket object
@@ -21,7 +26,7 @@ type Reconciler struct {
 	client.Client
 	scheme  *runtime.Scheme
 	logger  logr.Logger
-	s3Agent *S3Agent
+	s3Agent *s3_agent.S3Agent
 	// reconcile specific variables
 	s3Bucket     *s3v1alpha1.S3Bucket
 	s3UserRef    string
@@ -53,7 +58,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 	// Get s3Bucket object
 	switch err := r.Get(ctx, req.NamespacedName, r.s3Bucket); {
 	case apierrors.IsNotFound(err):
-		r.logger.Info("CR not found.")
+		r.logger.Info(fmt.Sprintf("S3Bucket %s in namespace %s not found!", req.Name, req.Namespace))
 		return ctrl.Result{}, nil
 	case err != nil:
 		r.logger.Error(err, "failed to fetch object")
@@ -77,4 +82,29 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return r.Provision(ctx)
 	}
 	return ctrl.Result{}, nil
+}
+
+func (r *Reconciler) setS3Agent(ctx context.Context, req ctrl.Request) error {
+	// Set the s3Agent regarding the secret of the s3UserClaim
+	s3userclaim := &s3v1alpha1.S3UserClaim{}
+	s3userClaimNamespacedName := types.NamespacedName{Namespace: req.Namespace, Name: r.s3UserRef}
+	err := r.Get(ctx, s3userClaimNamespacedName, s3userclaim)
+	if err != nil {
+		return err
+	}
+
+	userAdminSecret := &corev1.Secret{}
+	secretNamespacedName := types.NamespacedName{Namespace: req.NamespacedName.Namespace, Name: s3userclaim.Spec.AdminSecret}
+	err = r.Get(ctx, secretNamespacedName, userAdminSecret)
+	if err != nil {
+		return err
+	}
+
+	accessKey := string(userAdminSecret.Data[consts.DataKeyAccessKey])
+	secretKey := string(userAdminSecret.Data[consts.DataKeySecretKey])
+	r.s3Agent, err = s3_agent.NewS3Agent(accessKey, secretKey, r.rgwEndpoint, true)
+	if err != nil {
+		return err
+	}
+	return nil
 }
