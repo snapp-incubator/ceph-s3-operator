@@ -18,10 +18,12 @@ Here is the test workflow:
     - Operator
 1. Create S3UserClaims  
 2. Create two S3Bucket: One with retain and one with delete DeletionPolicy mode.
-3. Update S3Bucket S3UserRef
-4. Delete S3UserClaim
-5. Delete S3Buckets
-6. Delete S3UserClaim
+3. Webhook Validation:
+    - Update S3Bucket S3UserRef
+    - Create S3bucket with wrong S3UserRef
+    - Delete S3UserClaim
+4. Delete S3Buckets
+5. Delete S3UserClaim
 
 ### Assertions
 
@@ -34,9 +36,11 @@ Here is the test workflow:
     - S3Bucket CR
     - S3Bucket on ceph-rgw via aws-cli
     - aws-cli with user credentials **can** create or delete objects on the bucket
-3. Must be **denined** by the bucket validation webhook.
-4. Must be **denied** by the user validation Webhook.
-5. Dependent on the deletionPolicy mode:
+3. Denies:
+    - Must be **denined** by the bucket validation update webhook.
+    - Must be **denined** by the bucket validation create webhook.
+    - Must be **denied** by the user validation delete Webhook.
+4. Dependent on the deletionPolicy mode:
     - delete: bucket must **be** deleted.
     - retain: bucket must **not be** deleted.
-6. S3UserClaim and S3User CRs are deleted.
+5. S3UserClaim and S3User CRs are deleted.

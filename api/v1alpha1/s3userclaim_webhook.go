@@ -62,7 +62,7 @@ func (suc *S3UserClaim) SetupWebhookWithManager(mgr ctrl.Manager) error {
 		Complete()
 }
 
-//+kubebuilder:webhook:path=/validate-s3-snappcloud-io-v1alpha1-s3userclaim,mutating=false,failurePolicy=fail,sideEffects=None,groups=s3.snappcloud.io,resources=s3userclaims,verbs=create;update,versions=v1alpha1,name=vs3userclaim.kb.io,admissionReviewVersions=v1
+//+kubebuilder:webhook:path=/validate-s3-snappcloud-io-v1alpha1-s3userclaim,mutating=false,failurePolicy=fail,sideEffects=None,groups=s3.snappcloud.io,resources=s3userclaims,verbs=create;update;delete,versions=v1alpha1,name=vs3userclaim.kb.io,admissionReviewVersions=v1
 
 var _ webhook.Validator = &S3UserClaim{}
 
@@ -106,6 +106,22 @@ func (suc *S3UserClaim) ValidateUpdate(old runtime.Object) error {
 }
 
 func (suc *S3UserClaim) ValidateDelete() error {
+	s3userclaimlog.Info("validate delete", "name", suc.Name)
+
+	ctx, cancel := context.WithTimeout(context.Background(), ValidationTimeout)
+	defer cancel()
+
+	s3BucketList := &S3BucketList{}
+	err := runtimeClient.List(ctx, s3BucketList, client.InNamespace(suc.Namespace))
+	if err != nil {
+		s3userclaimlog.Error(err, "failed to list buckets")
+		return err
+	}
+
+	if len(s3BucketList.Items) != 0 {
+		return apierrors.NewBadRequest("There are existing buckets associated with this userclaim." +
+			"Please first delete them and try again.")
+	}
 	return nil
 }
 
