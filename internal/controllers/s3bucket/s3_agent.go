@@ -23,6 +23,7 @@ type S3Agent struct {
 }
 
 func newS3Agent(accessKey, secretKey, endpoint string, debug bool) (*S3Agent, error) {
+	// TODO: cephRegion must not be hardcoded.
 	const cephRegion = "us-east-1"
 
 	logLevel := aws.LogOff

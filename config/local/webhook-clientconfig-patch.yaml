@@ -1,3 +1,9 @@
+# Change domain/ip of the url regarding the host address which operator container is
+# going to get service from:
+# Linux: 172.17.0.1
+# Mac or Windows: host.docker.internal
+# Minikube: host.minikube.internal
+
 - op: replace
   path: /webhooks/0/clientConfig
   value:

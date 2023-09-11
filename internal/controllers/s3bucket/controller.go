@@ -27,6 +27,7 @@ import (
 func (r *Reconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&s3v1alpha1.S3Bucket{}).
+		// Set predicate to filter only generation change events.
 		WithEventFilter(predicate.GenerationChangedPredicate{}).
 		Complete(r)
 }

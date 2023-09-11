@@ -1,5 +1,5 @@
 #!/bin/bash
-
+# This file gets the s3user credentials from the secret and sets as the aws-cli credentials.
 # Replace with your Kubernetes secret name and profile name
 SECRET_NAME="s3-sample-admin-secret"
 PROFILE_NAME="ceph-test"

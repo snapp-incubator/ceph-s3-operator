@@ -111,6 +111,7 @@ func (suc *S3UserClaim) ValidateDelete() error {
 	ctx, cancel := context.WithTimeout(context.Background(), ValidationTimeout)
 	defer cancel()
 
+	// Err if there are existing buckets in the namespace
 	s3BucketList := &S3BucketList{}
 	err := runtimeClient.List(ctx, s3BucketList, client.InNamespace(suc.Namespace))
 	if err != nil {

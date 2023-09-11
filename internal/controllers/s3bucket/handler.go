@@ -44,13 +44,6 @@ func NewReconciler(mgr manager.Manager, cfg *config.Config) *Reconciler {
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
-// TODO(user): Modify the Reconcile function to compare the state specified by
-// the S3Bucket object against the actual cluster state, and then
-// perform operations to make the cluster state reflect the state specified by
-// the user.
-//
-// For more details, check Reconcile and its Result here:
-// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.14.1/pkg/reconcile
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 
 	r.logger = log.FromContext(ctx)
@@ -67,16 +60,19 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		return subreconciler.Evaluate(subreconciler.Requeue())
 	default:
 		r.s3UserRef = r.s3Bucket.Spec.S3UserRef
+		// Create a s3 session with the s3user credentials.
 		err = r.setS3Agent(ctx, req)
 		if err != nil {
 			r.logger.Error(err, "Failed to login on S3 with the user credentials")
 			return subreconciler.Evaluate(subreconciler.Requeue())
 		}
+		// Delete event
 		if r.s3Bucket.ObjectMeta.DeletionTimestamp != nil {
 			return r.Cleanup(ctx)
 		}
 	}
 
+	// Create event; Don't provision the object if it's in the ready status.
 	if r.s3Bucket.Status.Ready != true {
 		return r.Provision(ctx)
 	}

@@ -41,7 +41,6 @@ func (sb *S3Bucket) SetupWebhookWithManager(mgr ctrl.Manager) error {
 		Complete()
 }
 
-// TODO(user): change verbs to "verbs=create;update;delete" if you want to enable deletion validation.
 //+kubebuilder:webhook:path=/validate-s3-snappcloud-io-v1alpha1-s3bucket,mutating=false,failurePolicy=fail,sideEffects=None,groups=s3.snappcloud.io,resources=s3buckets,verbs=create;update,versions=v1alpha1,name=vs3bucket.kb.io,admissionReviewVersions=v1
 
 var _ webhook.Validator = &S3Bucket{}
@@ -54,6 +53,7 @@ func (sb *S3Bucket) ValidateCreate() error {
 	ctx, cancel := context.WithTimeout(context.Background(), ValidationTimeout)
 	defer cancel()
 
+	// S3UserRef Validator: S3UserRef must be previously defeind as S3UserClaim CR.
 	s3UserRef := sb.Spec.S3UserRef
 	s3UserClaim := &S3UserClaim{}
 	err := runtimeClient.Get(ctx, types.NamespacedName{Name: s3UserRef, Namespace: sb.Namespace}, s3UserClaim)
@@ -75,7 +75,7 @@ func (sb *S3Bucket) ValidateUpdate(old runtime.Object) error {
 
 	allErrs := field.ErrorList{}
 
-	// Err if s3UserClass is changed
+	// S3UserRef Validator: Err if s3userref is changed.
 	oldS3Bucket, ok := old.(*S3Bucket)
 	if !ok {
 		s3bucketlog.Info("invalid object passed as old s3Bucket", "type", old.GetObjectKind())
@@ -98,6 +98,5 @@ func (sb *S3Bucket) ValidateUpdate(old runtime.Object) error {
 func (sb *S3Bucket) ValidateDelete() error {
 	s3bucketlog.Info("validate delete", "name", sb.Name)
 
-	// TODO(user): fill in your validation logic upon object deletion.
 	return nil
 }
