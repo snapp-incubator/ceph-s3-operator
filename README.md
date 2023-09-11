@@ -44,3 +44,40 @@ make helm
 ```
 
 The chart will be created/updated in `deploy/charts/s3-operator` path
+
+### Run locally
+
+If you want to test the operator on your local environment, run the below instruction:
+
+First setup the local ceph cluster:
+
+```shell
+make setup-dev-env
+```
+
+Then run the operator either with or without webhook:
+
+```shell
+make run  # Without webhook
+make run-with-webhook # With webhook
+```
+
+At the end you can tear-down the operator and the ceph cluster:
+
+```shell
+make teardown-operator teardown-dev-env
+```
+
+## Test
+
+To test the project via the operator-sdk `envtest`:
+
+```shell
+make test
+```
+
+And to run the e2e tests with KUTTL performing the tests on a KIND cluster:
+
+```shell
+kubectl-kuttl test
+```
