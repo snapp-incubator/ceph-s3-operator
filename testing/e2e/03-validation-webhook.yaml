@@ -1,0 +1,14 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestStep
+commands:
+  - command: kubectl apply -f bucket-sample-updated.yaml
+    ignoreFailure: true
+  - command: kubectl apply -f s3bucket-wrong-s3userref.yaml
+    ignoreFailure: true
+  - command: kubectl delete s3userclaim s3userclaim-sample -n s3-test
+    ignoreFailure: true
+assert:
+  - s3bucket-ok.yaml
+  - 01-assert.yaml
+error:
+  - s3bucket-wrong-s3userref.yaml

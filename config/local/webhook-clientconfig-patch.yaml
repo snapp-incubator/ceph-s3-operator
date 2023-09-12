@@ -1,0 +1,16 @@
+# Change domain/ip of the url regarding the host address which operator container is
+# going to get service from:
+# Linux: 172.17.0.1
+# Mac or Windows: host.docker.internal
+# Minikube: host.minikube.internal
+
+- op: replace
+  path: /webhooks/0/clientConfig
+  value:
+    caBundle: $(CA_BUNDLE)
+    url: https://172.17.0.1:9443/validate-s3-snappcloud-io-v1alpha1-s3bucket
+- op: replace
+  path: /webhooks/1/clientConfig
+  value:
+    caBundle: $(CA_BUNDLE)
+    url: https://172.17.0.1:9443/validate-s3-snappcloud-io-v1alpha1-s3userclaim

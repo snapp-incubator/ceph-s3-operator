@@ -36,6 +36,7 @@ import (
 
 	s3v1alpha1 "github.com/snapp-incubator/s3-operator/api/v1alpha1"
 	"github.com/snapp-incubator/s3-operator/internal/config"
+	"github.com/snapp-incubator/s3-operator/internal/controllers/s3bucket"
 	"github.com/snapp-incubator/s3-operator/internal/controllers/s3userclaim"
 	//+kubebuilder:scaffold:imports
 )
@@ -112,10 +113,17 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Setup operators
+	// Setup S3userclaim operator
 	s3UserClaimReconciler := s3userclaim.NewReconciler(mgr, cfg, co)
 	if err = s3UserClaimReconciler.SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "S3UserClaim")
+		os.Exit(1)
+	}
+
+	// Setup s3bucket operator
+	S3BucketReconciler := s3bucket.NewReconciler(mgr, cfg)
+	if err = S3BucketReconciler.SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "S3Bucket")
 		os.Exit(1)
 	}
 
@@ -124,6 +132,11 @@ func main() {
 		s3v1alpha1.ValidationTimeout = time.Duration(cfg.ValidationWebhookTimeoutSeconds) * time.Second
 		if err = (&s3v1alpha1.S3UserClaim{}).SetupWebhookWithManager(mgr); err != nil {
 			setupLog.Error(err, "unable to create webhook", "webhook", "S3UserClaim")
+			os.Exit(1)
+		}
+
+		if err = (&s3v1alpha1.S3Bucket{}).SetupWebhookWithManager(mgr); err != nil {
+			setupLog.Error(err, "unable to create webhook", "webhook", "S3Bucket")
 			os.Exit(1)
 		}
 	}

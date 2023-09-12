@@ -1,0 +1,3 @@
+varReference:
+  - kind: ValidatingWebhookConfiguration
+    path: webhooks/clientConfig

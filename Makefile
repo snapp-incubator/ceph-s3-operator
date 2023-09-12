@@ -121,6 +121,12 @@ build: manifests generate fmt vet ## Build manager binary.
 run: manifests generate fmt vet ## Run a controller from your host.
 	go run ./main.go
 
+.PHONY: run-with-webhook
+run-with-webhook: manifests kustomize fmt vet # Run a controller from your host and with webhook.
+		$(KUSTOMIZE) build config/local | kubectl apply -f -
+		ENABLE_WEBHOOKS=true go run ./main.go
+
+
 # If you wish built the manager image targeting other platforms you can use the --platform flag.
 # (i.e. docker build --platform linux/arm64 ). However, you must enable docker buildKit for it.
 # More info: https://docs.docker.com/develop/develop-images/build_enhancements/

@@ -20,13 +20,8 @@ import (
 	"context"
 	goerrors "errors"
 	"fmt"
-	"net/http"
 	"regexp"
-	"time"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/awserr"
-	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/ceph/go-ceph/rgw/admin"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -39,10 +34,8 @@ import (
 
 	s3v1alpha1 "github.com/snapp-incubator/s3-operator/api/v1alpha1"
 	"github.com/snapp-incubator/s3-operator/internal/config"
+	"github.com/snapp-incubator/s3-operator/internal/s3_agent"
 	"github.com/snapp-incubator/s3-operator/pkg/consts"
-
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/s3"
 )
 
 var _ = Describe("S3UserClaim Controller", func() {
@@ -342,9 +335,9 @@ var _ = Describe("S3UserClaim Controller", func() {
 				Fail("failed to find the expected ceph user")
 			}
 
-			s3Agent, err := newS3Agent(s3Keys.AccessKey, s3Keys.SecretKey, cfg.Rgw.Endpoint, true)
+			s3Agent, err := s3_agent.NewS3Agent(s3Keys.AccessKey, s3Keys.SecretKey, cfg.Rgw.Endpoint, true)
 			Expect(err).To(BeNil())
-			Expect(s3Agent.createBucket("test-bucket")).To(Succeed())
+			Expect(s3Agent.CreateBucket("test-bucket")).To(Succeed())
 
 			By("Expect to delete the S3UserClaim successfully")
 			Eventually(func(g Gomega) {
@@ -366,57 +359,3 @@ var _ = Describe("S3UserClaim Controller", func() {
 		})
 	})
 })
-
-// S3Agent wraps the s3.S3 structure to allow for wrapper methods
-type S3Agent struct {
-	Client *s3.S3
-}
-
-func newS3Agent(accessKey, secretKey, endpoint string, debug bool) (*S3Agent, error) {
-	const cephRegion = "us-east-1"
-
-	logLevel := aws.LogOff
-	if debug {
-		logLevel = aws.LogDebug
-	}
-	client := http.Client{
-		Timeout: time.Second * 15,
-	}
-	sess, err := session.NewSession(
-		aws.NewConfig().
-			WithRegion(cephRegion).
-			WithCredentials(credentials.NewStaticCredentials(accessKey, secretKey, "")).
-			WithEndpoint(endpoint).
-			WithS3ForcePathStyle(true).
-			WithMaxRetries(5).
-			WithDisableSSL(true).
-			WithHTTPClient(&client).
-			WithLogLevel(logLevel),
-	)
-	if err != nil {
-		return nil, err
-	}
-	svc := s3.New(sess)
-	return &S3Agent{
-		Client: svc,
-	}, nil
-}
-
-func (s *S3Agent) createBucket(name string) error {
-	bucketInput := &s3.CreateBucketInput{
-		Bucket: &name,
-	}
-	_, err := s.Client.CreateBucket(bucketInput)
-	if err != nil {
-		if aerr, ok := err.(awserr.Error); ok {
-			switch aerr.Code() {
-			case s3.ErrCodeBucketAlreadyExists:
-				return nil
-			case s3.ErrCodeBucketAlreadyOwnedByYou:
-				return nil
-			}
-		}
-		return fmt.Errorf("failed to create bucket %q. %w", name, err)
-	}
-	return nil
-}

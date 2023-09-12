@@ -1,0 +1,36 @@
+# This kusotmization is used for running operator on local with enabled webhook.
+# It will remove default client service and adds the host url and caBundle.
+# The CA_BUNDLE value is got from the environment-properties.env which is populated by the cert-generator.sh
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+configMapGenerator:
+- name: environment-variables
+  envs: [environment-properties.env]
+  behavior: create
+
+vars:
+- name: CA_BUNDLE
+  objref:
+    kind: ConfigMap
+    name: environment-variables
+    apiVersion: v1
+  fieldref:
+    fieldpath: data.CA_BUNDLE
+
+configurations:
+  - env-var-transformer.yaml
+
+resources:
+  - ../webhook/
+
+namespace: kube-system
+
+patchesJson6902:
+  - target:
+      group: admissionregistration.k8s.io
+      version: v1
+      kind: ValidatingWebhookConfiguration
+      name: validating-webhook-configuration
+    path: webhook-clientconfig-patch.yaml
