@@ -1,0 +1,5 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestStep
+commands:
+  - command: kubectl delete s3bucket s3bucket-extra-delete -n s3-test
+  - command: kubectl delete s3userclaim s3userclaim-extra -n s3-test

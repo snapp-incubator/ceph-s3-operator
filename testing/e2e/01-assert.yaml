@@ -1,3 +1,5 @@
+# Sample user
+
 apiVersion: s3.snappcloud.io/v1alpha1
 kind: S3UserClaim
 metadata:
@@ -52,4 +54,64 @@ metadata:
     controller: true
     kind: S3UserClaim
     name: s3userclaim-sample
+type: Opaque
+
+
+# Extra user
+---
+
+apiVersion: s3.snappcloud.io/v1alpha1
+kind: S3UserClaim
+metadata:
+  name: s3userclaim-extra
+  namespace: s3-test
+status:
+  quota:
+    maxSize: 5k
+    maxObjects: "500"
+    maxBuckets: 5
+
+---
+
+apiVersion: s3.snappcloud.io/v1alpha1
+kind: S3User
+metadata:
+  name: s3-test.s3userclaim-extra
+spec:
+  quota:
+    maxSize: 5k
+    maxObjects: "500"
+    maxBuckets: 5
+  claimRef:
+    apiVersion: s3.snappcloud.io/v1alpha1
+    kind: S3UserClaim
+    name: s3userclaim-extra
+    namespace: s3-test
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: s3-extra-admin-secret
+  namespace: s3-test
+  ownerReferences:
+  - apiVersion: s3.snappcloud.io/v1alpha1
+    blockOwnerDeletion: true
+    controller: true
+    kind: S3UserClaim
+    name: s3userclaim-extra
+type: Opaque
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: s3-extra-readonly-secret
+  namespace: s3-test
+  ownerReferences:
+  - apiVersion: s3.snappcloud.io/v1alpha1
+    blockOwnerDeletion: true
+    controller: true
+    kind: S3UserClaim
+    name: s3userclaim-extra
 type: Opaque

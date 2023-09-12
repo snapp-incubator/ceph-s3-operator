@@ -34,3 +34,13 @@ commands:
 - script: aws s3 --endpoint-url "http://127.0.0.1:8000" ls s3://s3bucket-sample-delete --profile ceph-test | grep "test-object.txt"
   # Check if the user can delete the object
 - script: aws s3 --endpoint-url "http://127.0.0.1:8000" rm s3://s3bucket-sample-delete/test-object.txt --profile ceph-test
+
+---
+# Check CR of the extra user bucket
+apiVersion: s3.snappcloud.io/v1alpha1
+kind: S3Bucket
+metadata:
+  name: s3bucket-extra-delete
+  namespace: s3-test
+status:
+  ready: true

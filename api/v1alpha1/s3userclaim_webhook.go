@@ -119,9 +119,11 @@ func (suc *S3UserClaim) ValidateDelete() error {
 		return err
 	}
 
-	if len(s3BucketList.Items) != 0 {
-		return apierrors.NewBadRequest("There are existing buckets associated with this userclaim." +
-			"Please first delete them and try again.")
+	for _, bucket := range s3BucketList.Items {
+		if bucket.Spec.S3UserRef == suc.Name {
+			return apierrors.NewBadRequest("There are existing buckets associated with this userclaim. " +
+				"Please first delete them and try again.")
+		}
 	}
 	return nil
 }
