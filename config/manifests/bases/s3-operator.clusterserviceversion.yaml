@@ -23,8 +23,8 @@ spec:
       kind: S3User
       name: s3users.s3.snappcloud.io
       version: v1alpha1
-  description: an operator to handle s3 object storage
-  displayName: s3-operator
+  description: S3 operator for working with Ceph object storage
+  displayName: S3 Operator
   icon:
   - base64data: ""
     mediatype: ""
@@ -42,12 +42,13 @@ spec:
   - supported: true
     type: AllNamespaces
   keywords:
-  - operator
   - s3
+  - ceph
   links:
   - name: S3 Operator
     url: https://s3-operator.domain
   maturity: alpha
   provider:
-    name: SanppCloud
+    name: Snappcloud
+    url: https://github.com/snapp-incubator/s3-operator
   version: 0.0.0
