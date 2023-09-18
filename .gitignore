@@ -39,3 +39,7 @@ kubeconfig
 
 # Local env variables
 environment-properties.env
+
+# Bundle
+bundle*/
+catalog/

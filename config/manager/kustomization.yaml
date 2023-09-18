@@ -7,3 +7,6 @@ images:
 - name: controller
   newName: controller
   newTag: latest
+- name: ghcr.io/snapp-incubator/s3-operator
+  newName: docker.io/hamedkarbasi/s3-operator
+  newTag: v0.0.3

@@ -32,3 +32,6 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Build and push the bundle
+        run: make bundle bundle-build bundle-push IMAGE_TAG_BASE=ghcr.io/${{ github.repository }} VERSION=${{ steps.meta.outputs.tags }} IMG=ghcr.io/${{ github.repository }}:${{ steps.meta.outputs.tags }}
