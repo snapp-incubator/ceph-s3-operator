@@ -34,8 +34,9 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
 
       - name: Install operator-sdk
-        uses: shivanshs9/setup-k8s-operator-sdk@v1
-        with:
-          version: "^1.31.0"
+        run: |
+          curl -L https://github.com/operator-framework/operator-sdk/releases/download/v1.31.0/operator-sdk_linux_amd64 -o /usr/local/bin/operator-sdk
+          chmod +x /usr/local/bin/operator-sdk
+
       - name: Build and push the bundle
         run: make bundle bundle-build bundle-push IMAGE_TAG_BASE=ghcr.io/${{ github.repository }} VERSION=${{ steps.meta.outputs.tags }} IMG=ghcr.io/${{ github.repository }}:${{ steps.meta.outputs.tags }}
