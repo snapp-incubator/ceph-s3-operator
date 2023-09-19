@@ -33,5 +33,9 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
+      - name: Install operator-sdk
+        uses: shivanshs9/setup-k8s-operator-sdk@v1
+        with:
+          version: "^1.31.0"
       - name: Build and push the bundle
         run: make bundle bundle-build bundle-push IMAGE_TAG_BASE=ghcr.io/${{ github.repository }} VERSION=${{ steps.meta.outputs.tags }} IMG=ghcr.io/${{ github.repository }}:${{ steps.meta.outputs.tags }}
