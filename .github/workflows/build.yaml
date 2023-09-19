@@ -39,4 +39,8 @@ jobs:
           chmod +x /usr/local/bin/operator-sdk
 
       - name: Build and push the bundle
-        run: make bundle bundle-build bundle-push IMAGE_TAG_BASE=ghcr.io/${{ github.repository }} VERSION=${{ steps.meta.outputs.tags }} IMG=ghcr.io/${{ github.repository }}:${{ steps.meta.outputs.tags }}
+        run: |
+          TAG_VERSION=${{ github.ref_name }}
+          # remove "v" character at the first of the version.
+          VERSION="${TAG_VERSION#v}"
+          make bundle bundle-build bundle-push IMAGE_TAG_BASE=ghcr.io/${{ github.repository }} VERSION=$VERSION IMG=ghcr.io/${{ github.repository }}:$TAG_VERSION
