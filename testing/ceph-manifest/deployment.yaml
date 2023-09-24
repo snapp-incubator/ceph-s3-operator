@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ceph-cluster
+  labels:
+    app: ceph-cluster
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ceph-cluster
+  template:
+    metadata:
+      labels:
+        app: ceph-cluster
+    spec:
+      hostname: ceph-service
+      securityContext: {}
+      containers:
+      - name: ceph-cluster
+        securityContext: {}
+        image: docker.io/spc35771/s3-operator-testing:v0.1.0
+        ports:
+          - name: http
+            containerPort: 80
+            protocol: TCP
+        livenessProbe:
+          httpGet:
+            path: /
+            port: http
+          initialDelaySeconds: 10
+          timeoutSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /
+            port: http
+          periodSeconds: 10
+          timeoutSeconds: 3
