@@ -36,9 +36,6 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         name: checkout code
-      - name : Build the operator image
-        run: |
-          make docker-build IMG=s3-operator:latest
       - name: Install kuttl
         run: |
           curl -L https://github.com/kudobuilder/kuttl/releases/download/v0.15.0/kubectl-kuttl_0.15.0_linux_x86_64 -o /usr/local/bin/kubectl-kuttl

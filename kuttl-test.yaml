@@ -6,11 +6,6 @@ crdDir: "./config/crd/bases"
 testDirs:
 - "./testing/"
 timeout: 240
-# Load the s3-operator image
+# Load the necessary container images as cache
 kindContainers:
 - s3-operator
-- gcr.io/kubebuilder/kube-rbac-proxy:v0.13.1
-- quay.io/jetstack/cert-manager-webhook:v1.13.0
-- quay.io/jetstack/cert-manager-cainjector:v1.13.0
-- quay.io/jetstack/cert-manager-controller:v1.13.0
-- spc35771/s3-operator-testing:v0.1.0
