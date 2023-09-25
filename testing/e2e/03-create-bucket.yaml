@@ -29,3 +29,12 @@ metadata:
 spec:
   s3UserRef: s3userclaim-extra
   s3DeletionPolicy: delete
+
+---
+apiVersion: kuttl.dev/v1beta1
+kind: TestStep
+commands:
+  # Forward the ceph-cluster port on the host
+  - command: kubectl port-forward -n s3-operator-system deployment/ceph-cluster 8000:80
+    background: true 
+    skipLogOutput: true

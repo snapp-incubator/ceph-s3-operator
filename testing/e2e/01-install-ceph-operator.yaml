@@ -1,0 +1,17 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestStep
+commands:
+  # Install cluster resource quota crd
+  - command: kubectl apply -f ../../config/external-crd
+  # Create namespace s3-operator-system
+  - command: kubectl create namespace s3-operator-system
+    ignoreFailure: true
+  # Setup local ceph cluster
+  - command: kubectl apply -f ./ceph-manifest -n s3-operator-system
+  # Setup the operator
+  - command: make -C ../../ docker-build deploy-for-e2e-test IMG=s3-operator:latest
+
+  - command: kubectl create namespace s3-test
+    ignoreFailure: true
+  # The namespace should have the team label for the cluster resource quota
+  - command: kubectl label namespace s3-test snappcloud.io/team=myteam
