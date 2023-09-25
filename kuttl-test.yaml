@@ -5,6 +5,11 @@ kindConfig: "./kind-config.yaml"
 crdDir: "./config/crd/bases"
 testDirs:
 - "./testing/"
-# parallel: 3
 timeout: 240
-
+# Load the s3-operator image
+kindContainers:
+- s3-operator
+- quay.io/jetstack/cert-manager-webhook:v1.13.0
+- quay.io/jetstack/cert-manager-cainjector:v1.13.0
+- quay.io/jetstack/cert-manager-controller:v1.13.0
+- spc35771/s3-operator-testing:v0.1.0
