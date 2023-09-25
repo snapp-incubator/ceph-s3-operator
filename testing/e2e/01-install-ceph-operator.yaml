@@ -10,7 +10,7 @@ commands:
   - command: kubectl apply -f ./ceph-manifest -n s3-operator-system
   # Setup the operator
   - command: make -C ../../ docker-build deploy-for-e2e-test IMG=s3-operator:latest
-
+    timeout: 480
   - command: kubectl create namespace s3-test
     ignoreFailure: true
   # The namespace should have the team label for the cluster resource quota

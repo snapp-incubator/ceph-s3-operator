@@ -28,11 +28,13 @@ spec:
           httpGet:
             path: /
             port: http
-          initialDelaySeconds: 10
+          initialDelaySeconds: 50
+          periodSeconds: 10
           timeoutSeconds: 10
         readinessProbe:
           httpGet:
             path: /
             port: http
           periodSeconds: 10
+          initialDelaySeconds: 50
           timeoutSeconds: 3
