@@ -9,6 +9,7 @@ timeout: 240
 # Load the s3-operator image
 kindContainers:
 - s3-operator
+- gcr.io/kubebuilder/kube-rbac-proxy:v0.13.1
 - quay.io/jetstack/cert-manager-webhook:v1.13.0
 - quay.io/jetstack/cert-manager-cainjector:v1.13.0
 - quay.io/jetstack/cert-manager-controller:v1.13.0
