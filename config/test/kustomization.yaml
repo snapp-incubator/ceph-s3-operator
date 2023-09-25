@@ -1,0 +1,16 @@
+# This kusotmization is used for running operator on local with enabled webhook.
+# It will remove default client service and adds the host url and caBundle.
+# The CA_BUNDLE value is got from the environment-properties.env which is populated by the cert-generator.sh
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../default/
+
+patchesJson6902:
+  - target:
+      version: v1
+      kind: Secret
+      name: s3-operator-controller-manager-config
+    path: secret-patch.yaml
