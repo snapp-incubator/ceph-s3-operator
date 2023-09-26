@@ -18,7 +18,9 @@ spec:
       securityContext: {}
       containers:
       - name: ceph-cluster
-        securityContext: {}
+        securityContext: 
+          runAsUser: 0
+          runAsNonRoot: false
         image: docker.io/spc35771/s3-operator-testing:v0.1.0
         ports:
           - name: http
