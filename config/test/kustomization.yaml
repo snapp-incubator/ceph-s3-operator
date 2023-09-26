@@ -1,6 +1,6 @@
-# This kusotmization is used for running operator on local with enabled webhook.
-# It will remove default client service and adds the host url and caBundle.
-# The CA_BUNDLE value is got from the environment-properties.env which is populated by the cert-generator.sh
+# This kusotmization is used for deployihg operator on local or CI env for e2e tests.
+# It replaces ceph-cluster address with ceph service and sets imagePullPolicy as Never because
+# the image is built on the fly and is never pushed to the registry.
 
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization

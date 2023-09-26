@@ -182,7 +182,7 @@ undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/confi
 	$(KUSTOMIZE) build config/default | kubectl delete --ignore-not-found=$(ignore-not-found) -f -
 
 .PHONY: deploy-for-e2e-test
-deploy-for-e2e-test: manifests kustomize ## Deploy controller to the K8s cluster specified in ~/.kube/config.
+deploy-for-e2e-test: manifests kustomize ## Deploy controller to the K8s cluster specified in ~/.kube/config customized for e2e tests.
 	cd config/manager && $(KUSTOMIZE) edit set image ghcr.io/snapp-incubator/s3-operator=${IMG}
 	$(KUSTOMIZE) build config/test | kubectl apply -f -
 
