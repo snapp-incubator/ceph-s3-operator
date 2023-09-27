@@ -1,17 +1,16 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: ceph-cluster
-  namespace: s3-operator-system
+  name: cert-manager
+  namespace: cert-manager
 status:
   readyReplicas: 1
 
 ---
-
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: s3-operator-controller-manager
-  namespace: s3-operator-system
+  name: cert-manager-webhook
+  namespace: cert-manager
 status:
   readyReplicas: 1

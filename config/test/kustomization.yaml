@@ -1,0 +1,22 @@
+# This kusotmization is used for deployihg operator on local or CI env for e2e tests.
+# It replaces ceph-cluster address with ceph service and sets imagePullPolicy as Never because
+# the image is built on the fly and is never pushed to the registry.
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../default/
+
+patchesJson6902:
+  - target:
+      group: apps
+      version: v1
+      kind: Deployment
+      name: s3-operator-controller-manager
+    path: deployment-patch.yaml
+  - target:
+      version: v1
+      kind: Secret
+      name: s3-operator-controller-manager-config
+    path: secret-patch.yaml

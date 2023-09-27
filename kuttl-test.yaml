@@ -5,6 +5,7 @@ kindConfig: "./kind-config.yaml"
 crdDir: "./config/crd/bases"
 testDirs:
 - "./testing/"
-# parallel: 3
 timeout: 240
-
+# Load the necessary container images as cache
+kindContainers:
+- s3-operator
