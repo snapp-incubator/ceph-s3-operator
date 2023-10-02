@@ -12,6 +12,8 @@ spec:
     kind: S3Bucket
     listKind: S3BucketList
     plural: s3buckets
+    shortNames:
+    - s3b
     singular: s3bucket
   scope: Namespaced
   versions:

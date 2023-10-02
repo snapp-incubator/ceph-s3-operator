@@ -41,6 +41,7 @@ type S3BucketStatus struct {
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="S3USERREF",type=string,JSONPath=`.spec.s3UserRef`
+// +kubebuilder:resource:shortName=s3b
 
 // S3Bucket is the Schema for the s3buckets API
 type S3Bucket struct {

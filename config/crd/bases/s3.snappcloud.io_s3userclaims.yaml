@@ -12,6 +12,8 @@ spec:
     kind: S3UserClaim
     listKind: S3UserClaimList
     plural: s3userclaims
+    shortNames:
+    - s3u
     singular: s3userclaim
   scope: Namespaced
   versions:

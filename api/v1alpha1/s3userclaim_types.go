@@ -53,6 +53,7 @@ type S3UserClaimStatus struct {
 // +kubebuilder:printcolumn:name="MAX SIZE",type=string,JSONPath=`.status.quota.maxSize`
 // +kubebuilder:printcolumn:name="MAX BUCKETS",type=string,JSONPath=`.status.quota.maxBuckets`
 // +kubebuilder:printcolumn:name="AGE",type=date,JSONPath=`.metadata.creationTimestamp`
+// +kubebuilder:resource:shortName=s3u
 
 type S3UserClaim struct {
 	metav1.TypeMeta   `json:",inline"`
