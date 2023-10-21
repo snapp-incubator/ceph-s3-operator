@@ -9,6 +9,6 @@ commands:
     ignoreFailure: true
 assert:
   - s3bucket-ok.yaml
-  - 01-assert.yaml
+  - 02-assert.yaml
 error:
   - s3bucket-wrong-s3userref.yaml
