@@ -10,7 +10,9 @@ status:
     maxSize: 5k
     maxObjects: "500"
     maxBuckets: 5
-
+  subUsers:
+    - subUser1
+    - subUser2
 ---
 
 apiVersion: s3.snappcloud.io/v1alpha1
@@ -56,7 +58,35 @@ metadata:
     name: s3userclaim-sample
 type: Opaque
 
+# SubUser1
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: s3userclaim-sample-subUser1
+  namespace: s3-test
+  ownerReferences:
+  - apiVersion: s3.snappcloud.io/v1alpha1
+    blockOwnerDeletion: true
+    controller: true
+    kind: S3UserClaim
+    name: s3userclaim-sample
+type: Opaque
 
+# SubUser2
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: s3userclaim-sample-subUser2
+  namespace: s3-test
+  ownerReferences:
+  - apiVersion: s3.snappcloud.io/v1alpha1
+    blockOwnerDeletion: true
+    controller: true
+    kind: S3UserClaim
+    name: s3userclaim-sample
+type: Opaque
 # Extra user
 ---
 

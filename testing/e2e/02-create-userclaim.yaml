@@ -12,7 +12,9 @@ spec:
     maxSize: 5000
     maxObjects: 500
     maxBuckets: 5
-
+  subUsers:
+    - subUser1
+    - subUser2
 ---
 # Extra user
 apiVersion: s3.snappcloud.io/v1alpha1
