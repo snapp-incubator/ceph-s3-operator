@@ -263,6 +263,7 @@ func (r *Reconciler) updateS3UserClaimStatus(ctx context.Context) (*ctrl.Result,
 	status := s3v1alpha1.S3UserClaimStatus{
 		Quota:      r.s3UserClaim.Spec.Quota,
 		S3UserName: r.s3UserName,
+		SubUsers:   r.s3UserClaim.Spec.SubUsers,
 	}
 
 	if !apiequality.Semantic.DeepEqual(r.s3UserClaim.Status, status) {
