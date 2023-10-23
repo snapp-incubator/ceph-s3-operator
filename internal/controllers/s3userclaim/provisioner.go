@@ -35,6 +35,7 @@ func (r *Reconciler) Provision(ctx context.Context) (ctrl.Result, error) {
 		r.retrieveCephUser,
 		r.ensureAdminSecret,
 		r.ensureReadonlySecret,
+		r.ensureOtherSubusersSecret,
 		r.ensureS3User,
 		r.updateS3UserClaimStatus,
 		r.addCleanupFinalizer,
@@ -133,30 +134,41 @@ func (r *Reconciler) ensureReadonlySubuser(ctx context.Context) (*ctrl.Result, e
 }
 
 func (r *Reconciler) ensureOtherSubusers(ctx context.Context) (*ctrl.Result, error) {
-	subUsers := r.s3UserClaim.Spec.SubUsers
-	// Create a hashmap for subUsers available in the instance spec
-	subUserSet := make(map[string]bool)
-	// Create subUsers and continue if they are existed
-	for _, subUser := range subUsers {
-		subUserSet[subUser] = true
+	specSubUsers := r.s3UserClaim.Spec.SubUsers
+	// Create a hashmap to move all spec and ceph subUsers to it
+	subUserSet := make(map[string]string)
+
+	// Tag specSubUsers with "create"
+	for _, subUser := range specSubUsers {
+		subUserSet[subUser] = consts.SubUserTagCreate
+	}
+
+	// Tag cephSubUsers as remove if they are not already in the hashmap and remove them otherwise
+	// since they are already available on ceph and not needed to created.
+	for _, subUsersSpec := range r.cephUser.Subusers {
+		_, exists := subUserSet[subUsersSpec.Name]
+		if exists {
+			delete(subUserSet, subUsersSpec.Name)
+		} else {
+			subUserSet[subUsersSpec.Name] = consts.SubUserTagRemove
+		}
+	}
+
+	// Iterate over the subUsers hashmap and create or remove subUsers according to their tags.
+	for subUser, tag := range subUserSet {
 		desiredSubuser := admin.SubuserSpec{
 			Name:    subUser,
 			Access:  admin.SubuserAccessNone,
 			KeyType: pointer.String(consts.CephKeyTypeS3),
 		}
-		switch err := r.rgwClient.CreateSubuser(ctx, admin.User{ID: r.cephUserFullId}, desiredSubuser); {
-		case err.Error() == admin.ErrSubuserExists.Error():
-			r.logger.Info(fmt.Sprintf("Subuser '%s' exists for User %s", subUser, r.cephUserFullId))
-		case err != nil:
-			r.logger.Error(err, "failed to create subUser")
-			return subreconciler.Requeue()
-		}
-	}
+		if tag == consts.SubUserTagCreate {
 
-	// Remove subUsers which are not available in the spec but are in the ceph subUsers.
-	for _, cephSubUser := range r.cephUser.Subusers {
-		if !subUserSet[cephSubUser.Name] {
-			err := r.rgwClient.RemoveSubuser(ctx, admin.User{ID: r.cephUserFullId}, cephSubUser)
+			if err := r.rgwClient.CreateSubuser(ctx, admin.User{ID: r.cephUserFullId}, desiredSubuser); err != nil {
+				r.logger.Error(err, "failed to create subUser")
+				return subreconciler.Requeue()
+			}
+		} else {
+			err := r.rgwClient.RemoveSubuser(ctx, admin.User{ID: r.cephUserFullId}, desiredSubuser)
 			if err != nil {
 				r.logger.Error(err, "Failed to remove subUser")
 				return subreconciler.Requeue()
@@ -193,6 +205,23 @@ func (r *Reconciler) ensureReadonlySecret(ctx context.Context) (*ctrl.Result, er
 		return subreconciler.Requeue()
 	}
 	return r.ensureSecret(ctx, assembledSecret)
+}
+
+func (r *Reconciler) ensureOtherSubusersSecret(ctx context.Context) (*ctrl.Result, error) {
+	for _, subUser := range r.s3UserClaim.Spec.SubUsers {
+		cephSubUserFullId := fmt.Sprintf("%s:%s", r.cephUserFullId, subUser)
+		SubUserSecretName := fmt.Sprintf("%s-%s", r.s3UserClaim.Name, subUser)
+		assembledSecret, err := r.assembleCephUserSecret(cephSubUserFullId, SubUserSecretName)
+		if err != nil {
+			r.logger.Error(err, "failed to assemble readonly secret")
+			return subreconciler.Requeue()
+		}
+		result, err := r.ensureSecret(ctx, assembledSecret)
+		if result != nil || err != nil {
+			return result, err
+		}
+	}
+	return subreconciler.ContinueReconciling()
 }
 
 func (r *Reconciler) ensureS3User(ctx context.Context) (*ctrl.Result, error) {

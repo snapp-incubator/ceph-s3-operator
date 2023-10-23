@@ -34,4 +34,7 @@ const (
 
 	DeletionPolicyDelete = "delete"
 	DeletionPolicyRetain = "retain"
+
+	SubUserTagCreate = "create"
+	SubUserTagRemove = "remove"
 )
