@@ -30,6 +30,7 @@ func (r *Reconciler) Provision(ctx context.Context) (ctrl.Result, error) {
 		r.ensureCephUser,
 		r.ensureCephUserQuota,
 		r.ensureReadonlySubuser,
+		r.ensureOtherSubusers,
 		// retrieve the ceph user to have keys of subuser at hand
 		r.retrieveCephUser,
 		r.ensureAdminSecret,
@@ -131,6 +132,40 @@ func (r *Reconciler) ensureReadonlySubuser(ctx context.Context) (*ctrl.Result, e
 	return subreconciler.ContinueReconciling()
 }
 
+func (r *Reconciler) ensureOtherSubusers(ctx context.Context) (*ctrl.Result, error) {
+	subUsers := r.s3UserClaim.Spec.SubUsers
+	// Create a hashmap for subUsers available in the instance spec
+	subUserSet := make(map[string]bool)
+	// Create subUsers and continue if they are existed
+	for _, subUser := range subUsers {
+		subUserSet[subUser] = true
+		desiredSubuser := admin.SubuserSpec{
+			Name:    subUser,
+			Access:  admin.SubuserAccessNone,
+			KeyType: pointer.String(consts.CephKeyTypeS3),
+		}
+		switch err := r.rgwClient.CreateSubuser(ctx, admin.User{ID: r.cephUserFullId}, desiredSubuser); {
+		case err.Error() == admin.ErrSubuserExists.Error():
+			r.logger.Info(fmt.Sprintf("Subuser '%s' exists for User %s", subUser, r.cephUserFullId))
+		case err != nil:
+			r.logger.Error(err, "failed to create subUser")
+			return subreconciler.Requeue()
+		}
+	}
+
+	// Remove subUsers which are not available in the spec but are in the ceph subUsers.
+	for _, cephSubUser := range r.cephUser.Subusers {
+		if !subUserSet[cephSubUser.Name] {
+			err := r.rgwClient.RemoveSubuser(ctx, admin.User{ID: r.cephUserFullId}, cephSubUser)
+			if err != nil {
+				r.logger.Error(err, "Failed to remove subUser")
+				return subreconciler.Requeue()
+			}
+		}
+	}
+
+	return subreconciler.ContinueReconciling()
+}
 func (r *Reconciler) retrieveCephUser(ctx context.Context) (*ctrl.Result, error) {
 	retrievedUser, err := r.rgwClient.GetUser(ctx, admin.User{ID: r.cephUserFullId})
 	if err != nil {

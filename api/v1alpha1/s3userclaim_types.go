@@ -34,6 +34,9 @@ type S3UserClaimSpec struct {
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default:={"maxSize":"5368709120", "maxObjects":"1000", "maxBuckets": 2}
 	Quota *UserQuota `json:"quota,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	SubUsers []string `json:"subUsers,omitempty"`
 }
 
 // S3UserClaimStatus defines the observed state of S3UserClaim
@@ -43,6 +46,9 @@ type S3UserClaimStatus struct {
 
 	// +kubebuilder:validation:Optional
 	S3UserName string `json:"s3UserName,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	SubUsers []string `json:"subUsers,omitempty"`
 }
 
 // +kubebuilder:object:root=true
