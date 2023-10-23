@@ -140,17 +140,21 @@ func (r *Reconciler) ensureOtherSubusers(ctx context.Context) (*ctrl.Result, err
 
 	// Tag specSubUsers with "create"
 	for _, subUser := range specSubUsers {
-		subUserSet[subUser] = consts.SubUserTagCreate
+		cephSubUserFullId := fmt.Sprintf("%s:%s", r.cephUserFullId, subUser)
+		subUserSet[cephSubUserFullId] = consts.SubUserTagCreate
 	}
+
+	// Add read-only subUser to subUsers to prevent if from removing
+	subUserSet[r.readonlyCephUserFullId] = consts.SubUserTagCreate
 
 	// Tag cephSubUsers as remove if they are not already in the hashmap and remove them otherwise
 	// since they are already available on ceph and not needed to created.
-	for _, subUsersSpec := range r.cephUser.Subusers {
-		_, exists := subUserSet[subUsersSpec.Name]
+	for _, cephsubUser := range r.cephUser.Subusers {
+		_, exists := subUserSet[cephsubUser.Name]
 		if exists {
-			delete(subUserSet, subUsersSpec.Name)
+			delete(subUserSet, cephsubUser.Name)
 		} else {
-			subUserSet[subUsersSpec.Name] = consts.SubUserTagRemove
+			subUserSet[cephsubUser.Name] = consts.SubUserTagRemove
 		}
 	}
 
@@ -162,13 +166,14 @@ func (r *Reconciler) ensureOtherSubusers(ctx context.Context) (*ctrl.Result, err
 			KeyType: pointer.String(consts.CephKeyTypeS3),
 		}
 		if tag == consts.SubUserTagCreate {
-
+			r.logger.Info(fmt.Sprintf("Create subUser: %s", subUser))
 			if err := r.rgwClient.CreateSubuser(ctx, admin.User{ID: r.cephUserFullId}, desiredSubuser); err != nil {
 				r.logger.Error(err, "failed to create subUser")
 				return subreconciler.Requeue()
 			}
 		} else {
 			err := r.rgwClient.RemoveSubuser(ctx, admin.User{ID: r.cephUserFullId}, desiredSubuser)
+			r.logger.Info(fmt.Sprintf("Remove subUser: %s", subUser))
 			if err != nil {
 				r.logger.Error(err, "Failed to remove subUser")
 				return subreconciler.Requeue()
