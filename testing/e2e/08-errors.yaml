@@ -1,14 +1,12 @@
 apiVersion: s3.snappcloud.io/v1alpha1
-kind: S3Bucket
+kind: S3UserClaim
 metadata:
-  name: s3bucket-sample-delete
+  name: s3userclaim-sample
   namespace: s3-test
 
 ---
-
 apiVersion: s3.snappcloud.io/v1alpha1
-kind: S3Bucket
+kind: S3User
 metadata:
-  name: s3bucket-sample-retain
-  namespace: s3-test
+  name: s3-test.s3userclaim-sample
 

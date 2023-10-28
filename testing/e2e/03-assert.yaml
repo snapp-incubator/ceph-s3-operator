@@ -24,7 +24,7 @@ kind: TestAssert
 timeout: 30
 commands:
   # Configure the aws user credentials using created secret
-- command: testing/e2e/set-aws-secret.sh
+- command: testing/e2e/set-aws-secret.sh ceph-test s3-sample-admin-secret
   # Check if the buckets are existed on s3
 - script: aws --endpoint-url "http://127.0.0.1:8000" s3api list-buckets --profile ceph-test | grep s3bucket-sample-delete
 - script: aws --endpoint-url "http://127.0.0.1:8000" s3api list-buckets --profile ceph-test | grep s3bucket-sample-retain

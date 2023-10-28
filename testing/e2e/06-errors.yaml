@@ -1,12 +1,6 @@
-apiVersion: s3.snappcloud.io/v1alpha1
-kind: S3UserClaim
+apiVersion: v1
+kind: Secret
 metadata:
-  name: s3userclaim-sample
+  name: s3userclaim-sample-subuser1
   namespace: s3-test
-
----
-apiVersion: s3.snappcloud.io/v1alpha1
-kind: S3User
-metadata:
-  name: s3-test.s3userclaim-sample
-
+type: Opaque

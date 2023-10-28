@@ -1,0 +1,6 @@
+# Assert that this user would see the buckets
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+timeout: 5
+commands:
+- script: aws --endpoint-url "http://127.0.0.1:8000" s3api list-buckets --profile ceph-subuser1 && exit 1 || exit 0

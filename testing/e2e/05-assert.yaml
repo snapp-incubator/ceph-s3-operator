@@ -1,9 +1,15 @@
----
+# Assert creating the secret
+apiVersion: v1
+kind: Secret
+metadata:
+  name: s3userclaim-sample-subuser1
+  namespace: s3-test
+type: Opaque
 
+---
+# Assert that this user would see the buckets
 apiVersion: kuttl.dev/v1beta1
 kind: TestAssert
-timeout: 30
+timeout: 5
 commands:
-  # Check if the buckets are existed on s3
-- script: aws --endpoint-url "http://127.0.0.1:8000" s3api list-buckets --profile ceph-test | grep s3bucket-sample-delete | [ $(wc -c) -eq 0 ]
-- script: aws --endpoint-url "http://127.0.0.1:8000" s3api list-buckets --profile ceph-test | grep s3bucket-sample-retain 
+- command: testing/e2e/set-aws-secret.sh ceph-subuser1 s3userclaim-sample-subuser1
