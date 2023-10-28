@@ -50,6 +50,7 @@ type Reconciler struct {
 	cephTenant             string
 	cephUserId             string
 	cephUserFullId         string
+	cephSubUserFullIdMap   map[string][]string
 	cephDisplayName        string
 	s3UserName             string
 	readonlyCephUserId     string
@@ -104,7 +105,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			return r.Cleanup(ctx)
 		}
 	}
-
+	// Initialize the spec-based variables which need the reconciler to already have fetched the CRD
+	r.initSpecBasedVars()
 	return r.Provision(ctx)
 }
 
@@ -128,4 +130,14 @@ func (r *Reconciler) initVars(req ctrl.Request) {
 	r.readonlyCephUserFullId = fmt.Sprintf("%s:%s", r.cephUserFullId, r.readonlyCephUserId)
 
 	r.s3UserName = fmt.Sprintf("%s.%s", req.Namespace, req.Name)
+}
+
+func (r *Reconciler) initSpecBasedVars() {
+	// init subUser CephSubUserFullIDs and corresponding secrets
+	for _, subUser := range r.s3UserClaim.Spec.SubUsers {
+		// First item is the cephSubUserFullId
+		r.cephSubUserFullIdMap[subUser][0] = fmt.Sprintf("%s:%s", r.cephUserFullId, subUser)
+		// Second item is the SubUserSecretName
+		r.cephSubUserFullIdMap[subUser][1] = fmt.Sprintf("%s-%s", r.s3UserClaim.Name, subUser)
+	}
 }

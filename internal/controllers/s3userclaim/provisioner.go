@@ -140,7 +140,7 @@ func (r *Reconciler) ensureOtherSubusers(ctx context.Context) (*ctrl.Result, err
 
 	// Tag specSubUsers with "create"
 	for _, subUser := range specSubUsers {
-		cephSubUserFullId := fmt.Sprintf("%s:%s", r.cephUserFullId, subUser)
+		cephSubUserFullId := r.cephSubUserFullIdMap[subUser][0]
 		subUserSet[cephSubUserFullId] = consts.SubUserTagCreate
 	}
 
@@ -214,8 +214,8 @@ func (r *Reconciler) ensureReadonlySecret(ctx context.Context) (*ctrl.Result, er
 
 func (r *Reconciler) ensureOtherSubusersSecret(ctx context.Context) (*ctrl.Result, error) {
 	for _, subUser := range r.s3UserClaim.Spec.SubUsers {
-		cephSubUserFullId := fmt.Sprintf("%s:%s", r.cephUserFullId, subUser)
-		SubUserSecretName := fmt.Sprintf("%s-%s", r.s3UserClaim.Name, subUser)
+		cephSubUserFullId := r.cephSubUserFullIdMap[subUser][0]
+		SubUserSecretName := r.cephSubUserFullIdMap[subUser][1]
 		assembledSecret, err := r.assembleCephUserSecret(cephSubUserFullId, SubUserSecretName)
 		if err != nil {
 			r.logger.Error(err, "failed to assemble readonly secret")

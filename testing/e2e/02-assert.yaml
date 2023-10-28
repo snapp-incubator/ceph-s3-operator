@@ -11,8 +11,8 @@ status:
     maxObjects: "500"
     maxBuckets: 5
   subUsers:
-    - subUser1
-    - subUser2
+    - subuser1
+    - subuser2
 ---
 
 apiVersion: s3.snappcloud.io/v1alpha1
@@ -63,7 +63,7 @@ type: Opaque
 apiVersion: v1
 kind: Secret
 metadata:
-  name: s3userclaim-sample-subUser1
+  name: s3userclaim-sample-subuser1
   namespace: s3-test
   ownerReferences:
   - apiVersion: s3.snappcloud.io/v1alpha1
@@ -78,7 +78,7 @@ type: Opaque
 apiVersion: v1
 kind: Secret
 metadata:
-  name: s3userclaim-sample-subUser2
+  name: s3userclaim-sample-subuser2
   namespace: s3-test
   ownerReferences:
   - apiVersion: s3.snappcloud.io/v1alpha1
