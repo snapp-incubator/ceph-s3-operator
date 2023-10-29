@@ -7,6 +7,29 @@ metadata:
 type: Opaque
 
 ---
+# Assert creating the secret
+apiVersion: v1
+kind: Secret
+metadata:
+  name: s3userclaim-sample-subuser2
+  namespace: s3-test
+type: Opaque
+---
+# Assert the status of s3userclaim
+apiVersion: s3.snappcloud.io/v1alpha1
+kind: S3UserClaim
+metadata:
+  name: s3userclaim-sample
+  namespace: s3-test
+status:
+  quota:
+    maxSize: 5k
+    maxObjects: "500"
+    maxBuckets: 5
+  subUsers:
+    - subuser1
+    - subuser2
+---
 # Assert that this user would see the buckets
 apiVersion: kuttl.dev/v1beta1
 kind: TestAssert
