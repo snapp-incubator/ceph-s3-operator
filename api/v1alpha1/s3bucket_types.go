@@ -29,6 +29,9 @@ type S3BucketSpec struct {
 	// +kubebuilder:validation:Enum=delete;retain
 	// +kubebuilder:default=delete
 	S3DeletionPolicy string `json:"s3DeletionPolicy,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	S3SubUserBinding []SubUserBinding `json:"s3SubUserBinding,omitempty"`
 }
 
 // S3BucketStatus defines the observed state of S3Bucket

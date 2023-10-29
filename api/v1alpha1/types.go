@@ -11,3 +11,13 @@ type UserQuota struct {
 	// max number of buckets the user can create
 	MaxBuckets int `json:"maxBuckets,omitempty"`
 }
+
+type SubUserBinding struct {
+	// name of the subuser
+	// +kubebuilder:validation:Required
+	Name string `json:"name"`
+	// access of the subuser which can be read, write or full
+	// +kubebuilder:default=read
+	// +kubebuilder:validation:Enum=read;write;full
+	Access string `json:"access,omitempty"`
+}
