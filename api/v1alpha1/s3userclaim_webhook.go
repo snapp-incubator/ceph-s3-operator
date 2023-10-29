@@ -20,6 +20,7 @@ import (
 	"context"
 	goerrors "errors"
 	"fmt"
+	"regexp"
 	"time"
 
 	openshiftquota "github.com/openshift/api/quota/v1"
@@ -70,12 +71,19 @@ func (suc *S3UserClaim) ValidateCreate() error {
 	s3userclaimlog.Info("validate create", "name", suc.Name)
 
 	// Validate Quota
-	errorList := validateQuota(suc)
-	if len(errorList) == 0 {
+	allErrs := validateQuota(suc)
+
+	// Validate subUsers
+	subUsersErrorList := validateSubUsers(suc.Spec.SubUsers)
+
+	// Concatinate all errors
+	allErrs = append(allErrs, subUsersErrorList...)
+
+	if len(allErrs) == 0 {
 		return nil
 	}
 
-	return apierrors.NewInvalid(suc.GroupVersionKind().GroupKind(), suc.Name, errorList)
+	return apierrors.NewInvalid(suc.GroupVersionKind().GroupKind(), suc.Name, allErrs)
 }
 
 func (suc *S3UserClaim) ValidateUpdate(old runtime.Object) error {
@@ -99,6 +107,10 @@ func (suc *S3UserClaim) ValidateUpdate(old runtime.Object) error {
 	errorList := validateQuota(suc)
 	allErrs = append(allErrs, errorList...)
 
+	// Validate subUsers
+	subusersErrorList := validateSubUsers(suc.Spec.SubUsers)
+
+	allErrs = append(allErrs, subusersErrorList...)
 	if len(allErrs) == 0 {
 		return nil
 	}
@@ -312,4 +324,22 @@ func findTeamNamespaces(ctx context.Context, team string) ([]string, error) {
 	}
 
 	return namespaces, nil
+}
+
+func validateSubUsers(subUsers []string) field.ErrorList {
+	// Since the subUsers name is used in their secret name, they should follow the below
+	// regex pattern. Otherwise, the request has to be denied.
+	errorList := field.ErrorList{}
+	pattern := `^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`
+	regex := regexp.MustCompile(pattern)
+	for _, subUser := range subUsers {
+		if !regex.MatchString(subUser) {
+			errorReason := fmt.Sprintf("subuser: %s is invalid. It must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character", subUser)
+			errorList = append(errorList, field.Forbidden(field.NewPath("spec").Child("subUsers"), errorReason))
+		}
+	}
+	if len(errorList) == 0 {
+		return nil
+	}
+	return errorList
 }
