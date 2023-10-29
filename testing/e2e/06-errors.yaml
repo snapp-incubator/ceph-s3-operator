@@ -1,6 +1,0 @@
-apiVersion: v1
-kind: Secret
-metadata:
-  name: s3userclaim-sample-subuser1
-  namespace: s3-test
-type: Opaque

@@ -1,0 +1,6 @@
+apiVersion: kuttl.dev/v1beta1
+kind: TestStep
+commands:
+  - command: ./set-aws-secret.sh ceph-subuser1 s3userclaim-sample-subuser1
+  - command: kubectl apply -f bucket-with-subuser-access.yaml
+    
