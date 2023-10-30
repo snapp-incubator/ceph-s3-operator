@@ -8,4 +8,6 @@ spec:
   s3DeletionPolicy: delete
   s3SubUserBinding:
     - name: subuser1
+      access: write
+    - name: subuser2
       access: read

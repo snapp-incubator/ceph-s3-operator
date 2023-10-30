@@ -33,6 +33,5 @@ status:
 # Assert that this user would see the buckets
 apiVersion: kuttl.dev/v1beta1
 kind: TestAssert
-timeout: 5
 commands:
 - command: testing/e2e/set-aws-secret.sh ceph-subuser1 s3userclaim-sample-subuser1
