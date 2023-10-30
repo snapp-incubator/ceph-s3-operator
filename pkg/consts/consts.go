@@ -37,4 +37,8 @@ const (
 
 	SubUserTagCreate = "create"
 	SubUserTagRemove = "remove"
+
+	// Bucket Access Levels
+	BucketAccessRead  = "read"
+	BucketAccessWrite = "write"
 )

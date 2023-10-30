@@ -20,6 +20,7 @@ func (r *Reconciler) Provision(ctx context.Context) (ctrl.Result, error) {
 	// Do the actual reconcile work
 	subrecs := []subreconciler.Fn{
 		r.ensureBucket,
+		r.ensureBucketPolicy,
 		r.updateBucketStatus,
 		r.addCleanupFinalizer,
 	}
@@ -41,6 +42,14 @@ func (r *Reconciler) ensureBucket(ctx context.Context) (*ctrl.Result, error) {
 	return subreconciler.ContinueReconciling()
 }
 
+func (r *Reconciler) ensureBucketPolicy(ctx context.Context) (*ctrl.Result, error) {
+	err := r.s3Agent.SetBucketPolicy(r.subUserAccessMap,
+		r.cephTenant, r.s3UserRef, r.s3BucketName)
+	if err != nil {
+		return subreconciler.Requeue()
+	}
+	return subreconciler.ContinueReconciling()
+}
 func (r *Reconciler) updateBucketStatus(ctx context.Context) (*ctrl.Result, error) {
 	status := s3v1alpha1.S3BucketStatus{
 		Ready: true,
