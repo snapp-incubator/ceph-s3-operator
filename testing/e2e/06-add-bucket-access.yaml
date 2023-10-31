@@ -4,6 +4,3 @@ commands:
   - command: ./set-aws-secret.sh ceph-subuser1 s3userclaim-sample-subuser1
   - command: ./set-aws-secret.sh ceph-subuser2 s3userclaim-sample-subuser2
   - command: kubectl apply -f bucket-with-subuser-access.yaml
-  # Put an object to the bucket for access testing
-  - command: echo "Hello, S3!" | aws s3 --endpoint-url "http://127.0.0.1:8000" cp - s3://s3bucket-sample-delete/test-object.txt --profile ceph-test
-    

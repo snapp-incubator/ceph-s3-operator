@@ -8,7 +8,7 @@ spec:
   readonlySecret: s3-sample-readonly-secret
   adminSecret: s3-sample-admin-secret
   quota:
-    maxSize: 5000
+    maxSize: 10000
     maxObjects: 500
     maxBuckets: 5
   subUsers:

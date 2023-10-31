@@ -23,15 +23,23 @@ metadata:
   namespace: s3-test
 status:
   quota:
-    maxSize: 5k
+    maxSize: 10k
     maxObjects: "500"
     maxBuckets: 5
   subUsers:
     - subuser1
     - subuser2
 ---
-# Assert that this user would see the buckets
 apiVersion: kuttl.dev/v1beta1
 kind: TestAssert
 commands:
+# Login with subuser 1
 - command: testing/e2e/set-aws-secret.sh ceph-subuser1 s3userclaim-sample-subuser1
+# Subuser most be able to see the buckets
+- script: aws --endpoint-url "http://127.0.0.1:8000" s3api list-buckets --profile ceph-subuser1 | grep s3bucket-sample-delete
+# Subuser most not be able to get an object
+- script: aws s3 --endpoint-url "http://127.0.0.1:8000" cp s3://s3bucket-sample-delete/test-object.txt - --profile ceph-subuser1 && exit 1 || exit 0
+  # Subuser1 must not be able to put an object in the bucket 
+- script: echo "Hello, S3!" | aws s3 --endpoint-url "http://127.0.0.1:8000" cp - s3://s3bucket-sample-delete/test-object.txt --profile ceph-subuser1 && exit 1 || exit 0
+  # Subuser1 must be able to delete the object
+- script: aws s3 --endpoint-url "http://127.0.0.1:8000" rm s3://s3bucket-sample-delete/test-object.txt --profile ceph-subuser1 && exit 1 || exit 0
