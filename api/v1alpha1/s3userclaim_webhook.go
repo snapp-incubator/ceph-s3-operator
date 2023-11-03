@@ -69,15 +69,13 @@ var _ webhook.Validator = &S3UserClaim{}
 
 func (suc *S3UserClaim) ValidateCreate() error {
 	s3userclaimlog.Info("validate create", "name", suc.Name)
+	allErrs := field.ErrorList{}
 
 	// Validate Quota
-	allErrs := validateQuota(suc)
+	validateQuota(suc, &allErrs)
 
 	// Validate subUsers
-	subUsersErrorList := validateSubUsers(suc.Spec.SubUsers)
-
-	// Concatinate all errors
-	allErrs = append(allErrs, subUsersErrorList...)
+	validateSubUsers(suc.Spec.SubUsers, &allErrs)
 
 	if len(allErrs) == 0 {
 		return nil
@@ -104,13 +102,11 @@ func (suc *S3UserClaim) ValidateUpdate(old runtime.Object) error {
 	}
 
 	// Validate Quota
-	errorList := validateQuota(suc)
-	allErrs = append(allErrs, errorList...)
+	validateQuota(suc, &allErrs)
 
 	// Validate subUsers
-	subusersErrorList := validateSubUsers(suc.Spec.SubUsers)
+	validateSubUsers(suc.Spec.SubUsers, &allErrs)
 
-	allErrs = append(allErrs, subusersErrorList...)
 	if len(allErrs) == 0 {
 		return nil
 	}
@@ -140,11 +136,9 @@ func (suc *S3UserClaim) ValidateDelete() error {
 	return nil
 }
 
-func validateQuota(suc *S3UserClaim) field.ErrorList {
+func validateQuota(suc *S3UserClaim, allErrsPointer *field.ErrorList) {
 	ctx, cancel := context.WithTimeout(context.Background(), ValidationTimeout)
 	defer cancel()
-
-	errorList := field.ErrorList{}
 
 	quotaFieldPath := field.NewPath("spec").Child("quota")
 
@@ -152,23 +146,22 @@ func validateQuota(suc *S3UserClaim) field.ErrorList {
 
 	switch err := validateAgainstNamespaceQuota(ctx, suc); {
 	case err == consts.ErrExceededNamespaceQuota:
-		errorList = append(errorList, field.Forbidden(quotaFieldPath, err.Error()))
+		*allErrsPointer = append(*allErrsPointer, field.Forbidden(quotaFieldPath, err.Error()))
 	case err != nil:
 		s3userclaimlog.Error(err, "failed to validate against cluster quota")
-		errorList = append(errorList, field.InternalError(quotaFieldPath, fmt.Errorf(consts.ContactCloudTeamErrMessage)))
+		*allErrsPointer = append(*allErrsPointer, field.InternalError(quotaFieldPath, fmt.Errorf(consts.ContactCloudTeamErrMessage)))
 	}
 
 	switch err := validateAgainstClusterQuota(ctx, suc); {
 	case err == consts.ErrExceededClusterQuota:
-		errorList = append(errorList, field.Forbidden(quotaFieldPath, err.Error()))
+		*allErrsPointer = append(*allErrsPointer, field.Forbidden(quotaFieldPath, err.Error()))
 	case goerrors.Is(err, consts.ErrClusterQuotaNotDefined):
-		errorList = append(errorList, field.Forbidden(quotaFieldPath, err.Error()))
+		*allErrsPointer = append(*allErrsPointer, field.Forbidden(quotaFieldPath, err.Error()))
 	case err != nil:
 		s3userclaimlog.Error(err, "failed to validate against cluster quota")
-		errorList = append(errorList, field.InternalError(quotaFieldPath, fmt.Errorf(consts.ContactCloudTeamErrMessage)))
+		*allErrsPointer = append(*allErrsPointer, field.InternalError(quotaFieldPath, fmt.Errorf(consts.ContactCloudTeamErrMessage)))
 	}
 
-	return errorList
 }
 
 func validateAgainstNamespaceQuota(ctx context.Context, suc *S3UserClaim) error {
@@ -292,10 +285,10 @@ func findTeam(ctx context.Context, suc *S3UserClaim) (string, error) {
 		return "", fmt.Errorf("failed to get namespace, %w", err)
 	}
 
-	labels := ns.ObjectMeta.Labels
-	if labels == nil {
-		labels = map[string]string{}
-	}
+	// labels := ns.ObjectMeta.Labels
+	// if labels == nil {
+	// 	labels = map[string]string{}
+	// }
 
 	team, ok := ns.ObjectMeta.Labels[consts.LabelTeam]
 	if !ok {
@@ -326,20 +319,15 @@ func findTeamNamespaces(ctx context.Context, team string) ([]string, error) {
 	return namespaces, nil
 }
 
-func validateSubUsers(subUsers []string) field.ErrorList {
+func validateSubUsers(subUsers []string, allErrsPointer *field.ErrorList) {
 	// Since the subUsers name is used in their secret name, they should follow the below
 	// regex pattern. Otherwise, the request has to be denied.
-	errorList := field.ErrorList{}
 	pattern := `^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`
 	regex := regexp.MustCompile(pattern)
 	for _, subUser := range subUsers {
 		if !regex.MatchString(subUser) {
 			errorReason := fmt.Sprintf("subuser: %s is invalid. It must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character", subUser)
-			errorList = append(errorList, field.Forbidden(field.NewPath("spec").Child("subUsers"), errorReason))
+			*allErrsPointer = append(*allErrsPointer, field.Forbidden(field.NewPath("spec").Child("subUsers"), errorReason))
 		}
 	}
-	if len(errorList) == 0 {
-		return nil
-	}
-	return errorList
 }
