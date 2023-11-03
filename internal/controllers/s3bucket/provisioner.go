@@ -21,7 +21,7 @@ func (r *Reconciler) Provision(ctx context.Context) (ctrl.Result, error) {
 	subrecs := []subreconciler.Fn{
 		r.ensureBucket,
 		r.ensureBucketPolicy,
-		r.updateBucketStatus,
+		r.updateBucketStatusSuccess,
 		r.addCleanupFinalizer,
 	}
 	for _, subrec := range subrecs {
@@ -50,9 +50,16 @@ func (r *Reconciler) ensureBucketPolicy(ctx context.Context) (*ctrl.Result, erro
 	}
 	return subreconciler.ContinueReconciling()
 }
-func (r *Reconciler) updateBucketStatus(ctx context.Context) (*ctrl.Result, error) {
+
+func (r *Reconciler) updateBucketStatusSuccess(ctx context.Context) (*ctrl.Result, error) {
+	return r.updateBucketStatus(ctx, true, "", r.s3Bucket.Spec.S3SubUserBinding)
+}
+func (r *Reconciler) updateBucketStatus(ctx context.Context,
+	ready bool, reason string, s3subUserBinding []s3v1alpha1.SubUserBinding) (*ctrl.Result, error) {
 	status := s3v1alpha1.S3BucketStatus{
-		Ready: true,
+		Ready:            ready,
+		Reason:           reason,
+		S3SubUserBinding: s3subUserBinding,
 	}
 
 	if !apiequality.Semantic.DeepEqual(r.s3Bucket.Status, status) {

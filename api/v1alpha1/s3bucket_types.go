@@ -39,6 +39,12 @@ type S3BucketStatus struct {
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=false
 	Ready bool `json:"ready,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	Reason string `json:"reason,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	S3SubUserBinding []SubUserBinding `json:"s3SubUserBinding,omitempty"`
 }
 
 //+kubebuilder:object:root=true
