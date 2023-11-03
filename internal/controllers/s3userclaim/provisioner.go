@@ -193,6 +193,7 @@ func (r *Reconciler) ensureOtherSubusers(ctx context.Context) (*ctrl.Result, err
 					Name:      subUserSecretName,
 				},
 			}
+			// Delete subUser secret
 			switch err := r.Delete(ctx, subUserSecret); {
 			case apierrors.IsNotFound(err):
 				return subreconciler.ContinueReconciling()

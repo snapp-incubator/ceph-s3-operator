@@ -46,20 +46,22 @@ func (r *Reconciler) ensureBucketPolicy(ctx context.Context) (*ctrl.Result, erro
 	err := r.s3Agent.SetBucketPolicy(r.subUserAccessMap,
 		r.cephTenant, r.s3UserRef, r.s3BucketName)
 	if err != nil {
+		r.logger.Error(err, "failed to set the bucket policy")
+		r.updateBucketStatus(ctx, false, err.Error())
 		return subreconciler.Requeue()
 	}
 	return subreconciler.ContinueReconciling()
 }
 
 func (r *Reconciler) updateBucketStatusSuccess(ctx context.Context) (*ctrl.Result, error) {
-	return r.updateBucketStatus(ctx, true, "", r.s3Bucket.Spec.S3SubUserBinding)
+	return r.updateBucketStatus(ctx, true, "")
 }
 func (r *Reconciler) updateBucketStatus(ctx context.Context,
-	ready bool, reason string, s3subUserBinding []s3v1alpha1.SubUserBinding) (*ctrl.Result, error) {
+	ready bool, reason string) (*ctrl.Result, error) {
 	status := s3v1alpha1.S3BucketStatus{
 		Ready:            ready,
 		Reason:           reason,
-		S3SubUserBinding: s3subUserBinding,
+		S3SubUserBinding: r.s3Bucket.Spec.S3SubUserBinding,
 	}
 
 	if !apiequality.Semantic.DeepEqual(r.s3Bucket.Status, status) {
