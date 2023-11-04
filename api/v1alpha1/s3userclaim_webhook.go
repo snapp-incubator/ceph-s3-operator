@@ -71,10 +71,8 @@ func (suc *S3UserClaim) ValidateCreate() error {
 	s3userclaimlog.Info("validate create", "name", suc.Name)
 	allErrs := field.ErrorList{}
 
-	// Validate Quota
 	validateQuota(suc, &allErrs)
 
-	// Validate subUsers
 	validateSubUsers(suc.Spec.SubUsers, &allErrs)
 
 	if len(allErrs) == 0 {
@@ -284,11 +282,6 @@ func findTeam(ctx context.Context, suc *S3UserClaim) (string, error) {
 	if err := runtimeClient.Get(ctx, types.NamespacedName{Name: suc.ObjectMeta.Namespace}, ns); err != nil {
 		return "", fmt.Errorf("failed to get namespace, %w", err)
 	}
-
-	// labels := ns.ObjectMeta.Labels
-	// if labels == nil {
-	// 	labels = map[string]string{}
-	// }
 
 	team, ok := ns.ObjectMeta.Labels[consts.LabelTeam]
 	if !ok {
