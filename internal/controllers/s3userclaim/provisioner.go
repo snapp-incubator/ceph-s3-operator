@@ -384,9 +384,9 @@ func (r *Reconciler) generateSubUser(ctx context.Context, cephUserFullId string,
 
 func (r *Reconciler) removeSubuserAndSecret(ctx context.Context, cephUserFullId string,
 	subuserToRemove admin.SubuserSpec) error {
-	err := r.rgwClient.RemoveSubuser(ctx, admin.User{ID: cephUserFullId}, subuserToRemove)
 	r.logger.Info(fmt.Sprintf("Remove subUser: %s", subuserToRemove.Name))
-	if err != nil {
+	if err := r.rgwClient.RemoveSubuser(ctx, admin.User{ID: cephUserFullId},
+		subuserToRemove); err != nil {
 		r.logger.Error(err, "failed to remove subUser")
 		return err
 	}
