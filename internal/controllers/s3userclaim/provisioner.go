@@ -29,7 +29,6 @@ func (r *Reconciler) Provision(ctx context.Context) (ctrl.Result, error) {
 	subrecs := []subreconciler.Fn{
 		r.ensureCephUser,
 		r.ensureCephUserQuota,
-		r.ensureReadonlySubuser,
 		r.ensureOtherSubusers,
 		// retrieve the ceph user to have keys of subuser at hand
 		r.retrieveCephUser,
@@ -111,26 +110,6 @@ func (r *Reconciler) ensureCephUserQuota(ctx context.Context) (*ctrl.Result, err
 		r.logger.Error(err, "failed to get user quota")
 		return subreconciler.Requeue()
 	}
-}
-
-func (r *Reconciler) ensureReadonlySubuser(ctx context.Context) (*ctrl.Result, error) {
-	desiredSubuser := admin.SubuserSpec{
-		Name:    r.readonlyCephUserId,
-		Access:  admin.SubuserAccessRead,
-		KeyType: pointer.String(consts.CephKeyTypeS3),
-	}
-
-	for _, subuser := range r.cephUser.Subusers {
-		if subuser.Name == r.readonlyCephUserFullId {
-			return subreconciler.ContinueReconciling()
-		}
-	}
-
-	if err := r.rgwClient.CreateSubuser(ctx, admin.User{ID: r.cephUserFullId}, desiredSubuser); err != nil {
-		r.logger.Error(err, "failed to create subuser")
-		return subreconciler.Requeue()
-	}
-	return subreconciler.ContinueReconciling()
 }
 
 func (r *Reconciler) ensureOtherSubusers(ctx context.Context) (*ctrl.Result, error) {

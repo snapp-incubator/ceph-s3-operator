@@ -203,7 +203,7 @@ var _ = Describe("S3UserClaim Controller", func() {
 				gotCephUser, err := rgwClient.GetUser(ctx, cephUser)
 				g.Expect(err).NotTo(HaveOccurred())
 
-				g.Expect(len(gotCephUser.Keys)).To(BeNumerically("==", 3))
+				g.Expect(len(gotCephUser.Keys)).To(BeNumerically("==", 2))
 				g.Expect(gotCephUser.Keys).To(ContainElement(admin.UserKeySpec{
 					User:      readonlyCephUser.Name,
 					AccessKey: string(readonlySecret.Data[consts.DataKeyAccessKey]),
@@ -325,7 +325,7 @@ var _ = Describe("S3UserClaim Controller", func() {
 		It("Should remove the Ceph user with buckets", func() {
 			gotCephUser, err := rgwClient.GetUser(ctx, cephUser)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(len(gotCephUser.Keys)).To(Equal(3))
+			Expect(len(gotCephUser.Keys)).To(Equal(2))
 			var s3Keys admin.UserKeySpec
 			if gotCephUser.Keys[0].User == cephUser.ID {
 				s3Keys = gotCephUser.Keys[0]
