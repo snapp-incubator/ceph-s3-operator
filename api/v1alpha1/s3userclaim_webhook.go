@@ -20,7 +20,6 @@ import (
 	"context"
 	goerrors "errors"
 	"fmt"
-	"regexp"
 	"time"
 
 	openshiftquota "github.com/openshift/api/quota/v1"
@@ -71,9 +70,7 @@ func (suc *S3UserClaim) ValidateCreate() error {
 	s3userclaimlog.Info("validate create", "name", suc.Name)
 	allErrs := field.ErrorList{}
 
-	validateQuota(suc, &allErrs)
-
-	validateSubUsers(suc.Spec.SubUsers, &allErrs)
+	allErrs = validateQuota(suc, allErrs)
 
 	if len(allErrs) == 0 {
 		return nil
@@ -99,11 +96,7 @@ func (suc *S3UserClaim) ValidateUpdate(old runtime.Object) error {
 		)
 	}
 
-	// Validate Quota
-	validateQuota(suc, &allErrs)
-
-	// Validate subUsers
-	validateSubUsers(suc.Spec.SubUsers, &allErrs)
+	allErrs = validateQuota(suc, allErrs)
 
 	if len(allErrs) == 0 {
 		return nil
@@ -134,7 +127,7 @@ func (suc *S3UserClaim) ValidateDelete() error {
 	return nil
 }
 
-func validateQuota(suc *S3UserClaim, allErrsPointer *field.ErrorList) {
+func validateQuota(suc *S3UserClaim, allErrs field.ErrorList) field.ErrorList {
 	ctx, cancel := context.WithTimeout(context.Background(), ValidationTimeout)
 	defer cancel()
 
@@ -144,22 +137,22 @@ func validateQuota(suc *S3UserClaim, allErrsPointer *field.ErrorList) {
 
 	switch err := validateAgainstNamespaceQuota(ctx, suc); {
 	case err == consts.ErrExceededNamespaceQuota:
-		*allErrsPointer = append(*allErrsPointer, field.Forbidden(quotaFieldPath, err.Error()))
+		allErrs = append(allErrs, field.Forbidden(quotaFieldPath, err.Error()))
 	case err != nil:
 		s3userclaimlog.Error(err, "failed to validate against cluster quota")
-		*allErrsPointer = append(*allErrsPointer, field.InternalError(quotaFieldPath, fmt.Errorf(consts.ContactCloudTeamErrMessage)))
+		allErrs = append(allErrs, field.InternalError(quotaFieldPath, fmt.Errorf(consts.ContactCloudTeamErrMessage)))
 	}
 
 	switch err := validateAgainstClusterQuota(ctx, suc); {
 	case err == consts.ErrExceededClusterQuota:
-		*allErrsPointer = append(*allErrsPointer, field.Forbidden(quotaFieldPath, err.Error()))
+		allErrs = append(allErrs, field.Forbidden(quotaFieldPath, err.Error()))
 	case goerrors.Is(err, consts.ErrClusterQuotaNotDefined):
-		*allErrsPointer = append(*allErrsPointer, field.Forbidden(quotaFieldPath, err.Error()))
+		allErrs = append(allErrs, field.Forbidden(quotaFieldPath, err.Error()))
 	case err != nil:
 		s3userclaimlog.Error(err, "failed to validate against cluster quota")
-		*allErrsPointer = append(*allErrsPointer, field.InternalError(quotaFieldPath, fmt.Errorf(consts.ContactCloudTeamErrMessage)))
+		allErrs = append(allErrs, field.InternalError(quotaFieldPath, fmt.Errorf(consts.ContactCloudTeamErrMessage)))
 	}
-
+	return allErrs
 }
 
 func validateAgainstNamespaceQuota(ctx context.Context, suc *S3UserClaim) error {
@@ -310,17 +303,4 @@ func findTeamNamespaces(ctx context.Context, team string) ([]string, error) {
 	}
 
 	return namespaces, nil
-}
-
-func validateSubUsers(subUsers []string, allErrsPointer *field.ErrorList) {
-	// Since the subUsers name is used in their secret name, they should follow the below
-	// regex pattern. Otherwise, the request has to be denied.
-	pattern := `^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$`
-	regex := regexp.MustCompile(pattern)
-	for _, subUser := range subUsers {
-		if !regex.MatchString(subUser) {
-			errorReason := fmt.Sprintf("subuser: %s is invalid. It must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character", subUser)
-			*allErrsPointer = append(*allErrsPointer, field.Forbidden(field.NewPath("spec").Child("subUsers"), errorReason))
-		}
-	}
 }

@@ -12,6 +12,8 @@ type UserQuota struct {
 	MaxBuckets int `json:"maxBuckets,omitempty"`
 }
 
+// +kubebuilder:validation:Pattern=^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
+type SubUser string
 type SubUserBinding struct {
 	// name of the subuser
 	// +kubebuilder:validation:Required

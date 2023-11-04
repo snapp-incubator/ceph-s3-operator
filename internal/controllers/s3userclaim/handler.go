@@ -44,17 +44,18 @@ type Reconciler struct {
 	rgwClient *admin.API
 
 	// reconcile specific variables
-	clusterResourceQuota   *openshiftquota.ClusterResourceQuota
-	s3UserClaim            *s3v1alpha1.S3UserClaim
-	cephUser               admin.User
-	s3UserClaimNamespace   string
-	cephTenant             string
-	cephUserId             string
-	cephUserFullId         string
-	cephDisplayName        string
-	s3UserName             string
-	readonlyCephUserId     string
-	readonlyCephUserFullId string
+	clusterResourceQuota      *openshiftquota.ClusterResourceQuota
+	s3UserClaim               *s3v1alpha1.S3UserClaim
+	cephUser                  admin.User
+	s3UserClaimNamespace      string
+	cephTenant                string
+	cephUserId                string
+	cephUserFullId            string
+	cephDisplayName           string
+	s3UserName                string
+	readonlyCephUserId        string
+	readonlyCephUserFullId    string
+	desiredSubUsersStringList []string
 
 	// configurations
 	clusterName  string

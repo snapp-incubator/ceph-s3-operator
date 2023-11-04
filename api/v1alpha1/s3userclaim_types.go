@@ -36,7 +36,7 @@ type S3UserClaimSpec struct {
 	Quota *UserQuota `json:"quota,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	SubUsers []string `json:"subUsers,omitempty"`
+	SubUsers []SubUser `json:"subUsers,omitempty"`
 }
 
 // S3UserClaimStatus defines the observed state of S3UserClaim
@@ -48,7 +48,7 @@ type S3UserClaimStatus struct {
 	S3UserName string `json:"s3UserName,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	SubUsers []string `json:"subUsers,omitempty"`
+	SubUsers []SubUser `json:"subUsers,omitempty"`
 }
 
 // +kubebuilder:object:root=true

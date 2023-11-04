@@ -221,7 +221,7 @@ func (in *S3UserClaimSpec) DeepCopyInto(out *S3UserClaimSpec) {
 	}
 	if in.SubUsers != nil {
 		in, out := &in.SubUsers, &out.SubUsers
-		*out = make([]string, len(*in))
+		*out = make([]SubUser, len(*in))
 		copy(*out, *in)
 	}
 }
@@ -246,7 +246,7 @@ func (in *S3UserClaimStatus) DeepCopyInto(out *S3UserClaimStatus) {
 	}
 	if in.SubUsers != nil {
 		in, out := &in.SubUsers, &out.SubUsers
-		*out = make([]string, len(*in))
+		*out = make([]SubUser, len(*in))
 		copy(*out, *in)
 	}
 }

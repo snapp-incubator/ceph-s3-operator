@@ -78,6 +78,8 @@ func (r *Reconciler) ensureCephUser(ctx context.Context) (*ctrl.Result, error) {
 		logger.Error(err, "failed to get ceph user", "userId", desiredUser.ID)
 		return subreconciler.Requeue()
 	}
+	// retrieve desiredSubUsers as string list
+	r.desiredSubUsersStringList = retrieveSubUsersString(r.s3UserClaim.Spec.SubUsers)
 
 	return subreconciler.ContinueReconciling()
 }
@@ -121,7 +123,7 @@ func (r *Reconciler) ensureCephUserQuota(ctx context.Context) (*ctrl.Result, err
 // 3. Subusers which are common in the both lists will be deleted from the map; hence, no action happens on them.
 func (r *Reconciler) syncSubusersList(ctx context.Context) (*ctrl.Result, error) {
 
-	subUserFullIdAccessMap := r.generateSubUserAccessMap(r.s3UserClaim.Spec.SubUsers,
+	subUserFullIdAccessMap := r.generateSubUserAccessMap(r.desiredSubUsersStringList,
 		r.cephUser.Subusers)
 
 	// Iterate over the subUsers hashmap and create or remove subUsers according to their tags.
@@ -174,7 +176,7 @@ func (r *Reconciler) ensureReadonlySecret(ctx context.Context) (*ctrl.Result, er
 }
 
 func (r *Reconciler) ensureOtherSubusersSecret(ctx context.Context) (*ctrl.Result, error) {
-	for _, subUser := range r.s3UserClaim.Spec.SubUsers {
+	for _, subUser := range r.desiredSubUsersStringList {
 		cephSubUserFullId := generateSubUserFullId(r.cephUserFullId, subUser)
 		SubUserSecretName := generateSubUserSecretName(r.s3UserClaim.Name, subUser)
 		assembledSecret, err := r.assembleCephUserSecret(cephSubUserFullId, SubUserSecretName)
@@ -411,4 +413,12 @@ func (r *Reconciler) RemoveSubuserAndSecret(ctx context.Context, cephUserFullId 
 	default:
 		return nil
 	}
+}
+
+func retrieveSubUsersString(desiredSubUsers []s3v1alpha1.SubUser) []string {
+	subUsersStringList := make([]string, len(desiredSubUsers))
+	for i, desiredSubUser := range desiredSubUsers {
+		subUsersStringList[i] = string(desiredSubUser)
+	}
+	return subUsersStringList
 }
