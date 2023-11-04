@@ -356,7 +356,7 @@ func (r *Reconciler) generateSubUserAccess(desiredSubUsers []string,
 		subUserFullIdAccess[cephSubUserFullId] = consts.SubUserTagCreate
 	}
 
-	// Add read-only subUser to subUsers to prevent it from removing
+	// Add read-only subUser to subUsers to prevent removing it
 	subUserFullIdAccess[r.readonlyCephUserFullId] = consts.SubUserTagCreate
 
 	// Tag cephSubUsers as remove if they are not already in the map and remove them otherwise

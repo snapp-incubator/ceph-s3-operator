@@ -11,12 +11,12 @@ import (
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/snapp-incubator/s3-operator/pkg/consts"
 )
 
 // S3Agent wraps the s3.S3 structure to allow for wrapper methods
 type S3Agent struct {
-	Client             *s3.S3
-	BucketAccessAction map[string][]string
+	Client *s3.S3
 }
 
 func NewS3Agent(accessKey, secretKey, endpoint string, debug bool) (*S3Agent, error) {
@@ -108,7 +108,8 @@ func (s *S3Agent) SetBucketPolicy(subUserAccessMap map[string]string, tenant str
 		principal["AWS"] = AWS_iam
 		statement["Principal"] = principal
 
-		if actions, exists := s.BucketAccessAction[access]; exists {
+		BucketAccessAction := generateBucketAccessAction()
+		if actions, exists := BucketAccessAction[access]; exists {
 			statement["Action"] = actions
 		} else {
 			return fmt.Errorf("the access %s doesn't exists", access)
@@ -129,4 +130,20 @@ func (s *S3Agent) SetBucketPolicy(subUserAccessMap map[string]string, tenant str
 		return err
 	}
 	return nil
+}
+
+func generateBucketAccessAction() map[string][]string {
+	readActions := []string{
+		"s3:ListBucket",
+		"s3:GetObject",
+	}
+	writeActions := []string{
+		"s3:DeleteObject",
+		"s3:PutObject",
+	}
+
+	return map[string][]string{
+		consts.BucketAccessRead:  readActions,
+		consts.BucketAccessWrite: append(readActions, writeActions...),
+	}
 }

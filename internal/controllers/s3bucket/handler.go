@@ -112,20 +112,6 @@ func (r *Reconciler) setS3Agent(ctx context.Context, req ctrl.Request) error {
 		return err
 	}
 
-	readActions := []string{
-		"s3:ListBucket",
-		"s3:GetObject",
-	}
-	writeActions := []string{
-		"s3:DeleteObject",
-		"s3:PutObject",
-	}
-
-	// TODO: Move this to operator level instead of reconciler level
-	r.s3Agent.BucketAccessAction = map[string][]string{
-		consts.BucketAccessRead:  readActions,
-		consts.BucketAccessWrite: append(readActions, writeActions...),
-	}
 	return nil
 }
 
