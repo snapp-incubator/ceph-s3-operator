@@ -130,18 +130,17 @@ func (r *Reconciler) initVars(req ctrl.Request) {
 	r.s3UserName = fmt.Sprintf("%s.%s", req.Namespace, req.Name)
 }
 
-func cephSubUserFullIdMaker(cephUserFullId string, subUser string) string {
+func generateSubUserFullId(cephUserFullId string, subUser string) string {
 	return fmt.Sprintf("%s:%s", cephUserFullId, subUser)
 }
 
-func subUserSecretNameMaker(s3UserClaimName string, subUser string) string {
+func generateSubUserSecretName(s3UserClaimName string, subUser string) string {
 	return fmt.Sprintf("%s-%s", s3UserClaimName, subUser)
 }
 
-func subUserNameExtractor(cephSubUserFullId string) (string, error) {
+func extractSubUserName(cephSubUserFullId string) (string, error) {
 	parts := strings.Split(cephSubUserFullId, ":")
 	if len(parts) == 2 {
-		// return the last part since it's the subUser name
 		return parts[1], nil
 	} else {
 		return "", fmt.Errorf("cannot parse the cephSubUserFullId=%s", cephSubUserFullId)

@@ -113,13 +113,13 @@ func (r *Reconciler) ensureCephUserQuota(ctx context.Context) (*ctrl.Result, err
 }
 
 func (r *Reconciler) ensureOtherSubusers(ctx context.Context) (*ctrl.Result, error) {
-	specSubUsers := r.s3UserClaim.Spec.SubUsers
+	desiredSubUsers := r.s3UserClaim.Spec.SubUsers
 	// Create a hashmap to move all spec and ceph subUsers to it
 	subUserFullIdSet := make(map[string]string)
 
 	// Tag specSubUsers with "create"
-	for _, subUser := range specSubUsers {
-		cephSubUserFullId := cephSubUserFullIdMaker(r.cephUserFullId, subUser)
+	for _, subUser := range desiredSubUsers {
+		cephSubUserFullId := generateSubUserFullId(r.cephUserFullId, subUser)
 		subUserFullIdSet[cephSubUserFullId] = consts.SubUserTagCreate
 	}
 
@@ -128,12 +128,12 @@ func (r *Reconciler) ensureOtherSubusers(ctx context.Context) (*ctrl.Result, err
 
 	// Tag cephSubUsers as remove if they are not already in the hashmap and remove them otherwise
 	// since they are already available on ceph and not needed to created.
-	for _, cephsubUser := range r.cephUser.Subusers {
-		_, exists := subUserFullIdSet[cephsubUser.Name]
+	for _, currentSubUser := range r.cephUser.Subusers {
+		_, exists := subUserFullIdSet[currentSubUser.Name]
 		if exists {
-			delete(subUserFullIdSet, cephsubUser.Name)
+			delete(subUserFullIdSet, currentSubUser.Name)
 		} else {
-			subUserFullIdSet[cephsubUser.Name] = consts.SubUserTagRemove
+			subUserFullIdSet[currentSubUser.Name] = consts.SubUserTagRemove
 		}
 	}
 
@@ -160,12 +160,12 @@ func (r *Reconciler) ensureOtherSubusers(ctx context.Context) (*ctrl.Result, err
 				return subreconciler.Requeue()
 			}
 			// Extrace subUser name from the subUserFullId
-			subUser, err := subUserNameExtractor(subUserFullId)
+			subUser, err := extractSubUserName(subUserFullId)
 			if err != nil {
 				r.logger.Error(err, "failed to remove s3SubUserSecret")
 				return subreconciler.Requeue()
 			}
-			subUserSecretName := subUserSecretNameMaker(r.s3UserClaim.Name, subUser)
+			subUserSecretName := generateSubUserSecretName(r.s3UserClaim.Name, subUser)
 			subUserSecret := &corev1.Secret{
 				ObjectMeta: metav1.ObjectMeta{
 					Namespace: r.s3UserClaim.Namespace,
@@ -218,8 +218,8 @@ func (r *Reconciler) ensureReadonlySecret(ctx context.Context) (*ctrl.Result, er
 
 func (r *Reconciler) ensureOtherSubusersSecret(ctx context.Context) (*ctrl.Result, error) {
 	for _, subUser := range r.s3UserClaim.Spec.SubUsers {
-		cephSubUserFullId := cephSubUserFullIdMaker(r.cephUserFullId, subUser)
-		SubUserSecretName := subUserSecretNameMaker(r.s3UserClaim.Name, subUser)
+		cephSubUserFullId := generateSubUserFullId(r.cephUserFullId, subUser)
+		SubUserSecretName := generateSubUserSecretName(r.s3UserClaim.Name, subUser)
 		assembledSecret, err := r.assembleCephUserSecret(cephSubUserFullId, SubUserSecretName)
 		if err != nil {
 			r.logger.Error(err, "failed to assemble other subUsers secret")
