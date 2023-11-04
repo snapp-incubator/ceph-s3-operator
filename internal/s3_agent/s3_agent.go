@@ -109,8 +109,8 @@ func (s *S3Agent) SetBucketPolicy(subUserAccessMap map[string]string, tenant str
 		principal["AWS"] = AWS_iam
 		statement["Principal"] = principal
 
-		BucketAccessAction := generateBucketAccessAction()
-		if actions, exists := BucketAccessAction[access]; exists {
+		bucketAccessAction := generateBucketAccessAction()
+		if actions, exists := bucketAccessAction[access]; exists {
 			statement["Action"] = actions
 		} else {
 			return fmt.Errorf("the access %s doesn't exists", access)
