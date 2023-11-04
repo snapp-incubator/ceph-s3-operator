@@ -112,6 +112,13 @@ func (r *Reconciler) ensureCephUserQuota(ctx context.Context) (*ctrl.Result, err
 	}
 }
 
+// syncSubusersList creates the new subusers and deletes the ones which have been removed
+// from the spec.
+// At first, it creates a map from subusers to a tag which can be either "create" or "remove"
+// demonstrating the action that we want to be happened on the subuser:
+// 1. Subusers which are in the spec list and not in the current ceph users list will be created.
+// 2. Subusers which are not in the spec list but are in the current ceph users list will be removed with their secrets.
+// 3. Subusers which are common in the both lists will be deleted from the map; hence, no action happens on them.
 func (r *Reconciler) syncSubusersList(ctx context.Context) (*ctrl.Result, error) {
 
 	subUserFullIdAccessMap := r.generateSubUserAccessMap(r.s3UserClaim.Spec.SubUsers,
