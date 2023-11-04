@@ -17,6 +17,7 @@ type SubUserBinding struct {
 	// +kubebuilder:validation:Required
 	Name string `json:"name"`
 	// access of the subuser which can be read or write
+	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=read
 	// +kubebuilder:validation:Enum=read;write
 	Access string `json:"access,omitempty"`

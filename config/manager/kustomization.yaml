@@ -7,6 +7,3 @@ images:
 - name: controller
   newName: controller
   newTag: latest
-- name: ghcr.io/snapp-incubator/s3-operator
-  newName: s3-operator
-  newTag: latest
