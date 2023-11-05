@@ -13,8 +13,8 @@ type UserQuota struct {
 }
 
 // +kubebuilder:validation:Pattern=^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
-type SubUser string
-type SubUserBinding struct {
+type Subuser string
+type SubuserBinding struct {
 	// name of the subuser
 	// +kubebuilder:validation:Required
 	Name string `json:"name"`

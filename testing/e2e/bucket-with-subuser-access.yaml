@@ -6,7 +6,7 @@ metadata:
 spec:
   s3UserRef: s3userclaim-sample
   s3DeletionPolicy: delete
-  s3SubUserBinding:
+  s3SubuserBinding:
     - name: subuser1
       access: write
     - name: subuser2

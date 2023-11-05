@@ -35,8 +35,8 @@ const (
 	DeletionPolicyDelete = "delete"
 	DeletionPolicyRetain = "retain"
 
-	SubUserTagCreate = "create"
-	SubUserTagRemove = "remove"
+	SubuserTagCreate = "create"
+	SubuserTagRemove = "remove"
 
 	// Bucket Access Levels
 	BucketAccessRead  = "read"

@@ -31,7 +31,7 @@ type S3BucketSpec struct {
 	S3DeletionPolicy string `json:"s3DeletionPolicy,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	S3SubUserBinding []SubUserBinding `json:"s3SubUserBinding,omitempty"`
+	S3SubuserBinding []SubuserBinding `json:"s3SubuserBinding,omitempty"`
 }
 
 // S3BucketStatus defines the observed state of S3Bucket
@@ -44,7 +44,7 @@ type S3BucketStatus struct {
 	Reason string `json:"reason,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	S3SubUserBinding []SubUserBinding `json:"s3SubUserBinding,omitempty"`
+	S3SubuserBinding []SubuserBinding `json:"s3SubuserBinding,omitempty"`
 }
 
 //+kubebuilder:object:root=true

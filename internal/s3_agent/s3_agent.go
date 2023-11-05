@@ -78,7 +78,7 @@ func (s *S3Agent) DeleteBucket(name string) error {
 	return err
 }
 
-func (s *S3Agent) SetBucketPolicy(subUserAccessMap map[string]string, tenant string,
+func (s *S3Agent) SetBucketPolicy(subuserAccessMap map[string]string, tenant string,
 	owner string, bucket string) error {
 	// The map of access levels to the AWS IAM names slice
 	accessAWSIAMMap := make(map[string][]string)
@@ -87,9 +87,9 @@ func (s *S3Agent) SetBucketPolicy(subUserAccessMap map[string]string, tenant str
 		"Id":      "S3Policy",
 	}
 	statementSlice := []map[string]interface{}{}
-	for subUser, access := range subUserAccessMap {
+	for subuser, access := range subuserAccessMap {
 		// Create AWS IAM Name needed for the policy from the subuser name
-		aws_iam := fmt.Sprintf("arn:aws:iam::%s:user/%s:%s", tenant, owner, subUser)
+		aws_iam := fmt.Sprintf("arn:aws:iam::%s:user/%s:%s", tenant, owner, subuser)
 		accessAWSIAMMap[access] = append(accessAWSIAMMap[access], aws_iam)
 	}
 

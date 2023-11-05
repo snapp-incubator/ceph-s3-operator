@@ -86,7 +86,7 @@ spec:
                 type: string
               s3UserClass:
                 type: string
-              subUsers:
+              subusers:
                 items:
                   pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
                   type: string
@@ -121,7 +121,7 @@ spec:
                 type: object
               s3UserName:
                 type: string
-              subUsers:
+              subusers:
                 items:
                   pattern: ^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
                   type: string

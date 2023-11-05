@@ -37,7 +37,7 @@ type Reconciler struct {
 	clusterName      string
 	cephTenant       string
 	cephUserFullId   string
-	subUserAccessMap map[string]string
+	subuserAccessMap map[string]string
 }
 
 func NewReconciler(mgr manager.Manager, cfg *config.Config) *Reconciler {
@@ -124,9 +124,9 @@ func (r *Reconciler) initVars(req ctrl.Request) {
 	r.cephTenant = fmt.Sprintf("%s__%s", clusterName, namespace)
 	r.cephUserFullId = fmt.Sprintf("%s$%s", r.cephTenant, r.s3UserRef)
 
-	r.subUserAccessMap = make(map[string]string)
-	for _, binding := range r.s3Bucket.Spec.S3SubUserBinding {
-		r.subUserAccessMap[binding.Name] = binding.Access
+	r.subuserAccessMap = make(map[string]string)
+	for _, binding := range r.s3Bucket.Spec.S3SubuserBinding {
+		r.subuserAccessMap[binding.Name] = binding.Access
 	}
 
 }

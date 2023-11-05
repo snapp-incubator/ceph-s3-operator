@@ -26,7 +26,7 @@ status:
     maxSize: 10k
     maxObjects: "500"
     maxBuckets: 5
-  subUsers:
+  subusers:
     - subuser1
     - subuser2
 ---

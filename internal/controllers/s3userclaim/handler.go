@@ -55,7 +55,7 @@ type Reconciler struct {
 	s3UserName                string
 	readonlyCephUserId        string
 	readonlyCephUserFullId    string
-	desiredSubUsersStringList []string
+	desiredSubusersStringList []string
 
 	// configurations
 	clusterName  string
@@ -131,19 +131,19 @@ func (r *Reconciler) initVars(req ctrl.Request) {
 	r.s3UserName = fmt.Sprintf("%s.%s", req.Namespace, req.Name)
 }
 
-func generateSubUserFullId(cephUserFullId string, subUser string) string {
-	return fmt.Sprintf("%s:%s", cephUserFullId, subUser)
+func generateSubuserFullId(cephUserFullId string, subuser string) string {
+	return fmt.Sprintf("%s:%s", cephUserFullId, subuser)
 }
 
-func generateSubUserSecretName(s3UserClaimName string, subUser string) string {
-	return fmt.Sprintf("%s-%s", s3UserClaimName, subUser)
+func generateSubuserSecretName(s3UserClaimName string, subuser string) string {
+	return fmt.Sprintf("%s-%s", s3UserClaimName, subuser)
 }
 
-func extractSubUserName(cephSubUserFullId string) (string, error) {
-	parts := strings.Split(cephSubUserFullId, ":")
+func extractSubuserName(cephSubuserFullId string) (string, error) {
+	parts := strings.Split(cephSubuserFullId, ":")
 	if len(parts) == 2 {
 		return parts[1], nil
 	} else {
-		return "", fmt.Errorf("cannot parse the cephSubUserFullId=%s", cephSubUserFullId)
+		return "", fmt.Errorf("cannot parse the cephSubuserFullId=%s", cephSubuserFullId)
 	}
 }

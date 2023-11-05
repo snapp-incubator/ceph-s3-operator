@@ -47,7 +47,7 @@ spec:
                 - delete
                 - retain
                 type: string
-              s3SubUserBinding:
+              s3SubuserBinding:
                 items:
                   properties:
                     access:
@@ -77,7 +77,7 @@ spec:
                 type: boolean
               reason:
                 type: string
-              s3SubUserBinding:
+              s3SubuserBinding:
                 items:
                   properties:
                     access:
