@@ -45,7 +45,7 @@ func (r *Reconciler) removeOrRetainBucket(ctx context.Context) (*ctrl.Result, er
 		}
 		r.logger.Error(err, "failed to remove the bucket")
 		// update bucket status with failure reason; e.g. Bucket is not empty
-		r.updateBucketStatus(ctx, false, err.Error())
+		r.updateBucketStatus(ctx, true, err.Error(), "unknown")
 		return subreconciler.Requeue()
 	}
 	return subreconciler.ContinueReconciling()

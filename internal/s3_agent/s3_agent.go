@@ -79,7 +79,7 @@ func (s *S3Agent) DeleteBucket(name string) error {
 }
 
 func (s *S3Agent) SetBucketPolicy(subuserAccessMap map[string]string, tenant string,
-	owner string, bucket string) error {
+	owner string, bucket string) (string, error) {
 	// The map of access levels to the AWS IAM names slice
 	accessAWSIAMMap := make(map[string][]string)
 	policy := map[string]interface{}{
@@ -113,7 +113,7 @@ func (s *S3Agent) SetBucketPolicy(subuserAccessMap map[string]string, tenant str
 		if actions, exists := bucketAccessAction[access]; exists {
 			statement["Action"] = actions
 		} else {
-			return fmt.Errorf("the access %s doesn't exists", access)
+			return "", fmt.Errorf("the access %s doesn't exists", access)
 		}
 		// Append the statement
 		statementSlice = append(statementSlice, statement)
@@ -124,13 +124,13 @@ func (s *S3Agent) SetBucketPolicy(subuserAccessMap map[string]string, tenant str
 	policyInput := s3.PutBucketPolicyInput{Bucket: aws.String(bucket),
 		Policy: aws.String(string(policyMarshal))}
 	if err != nil {
-		return err
+		return "", err
 	}
 	_, err = s.Client.PutBucketPolicy(&policyInput)
 	if err != nil {
-		return err
+		return "", err
 	}
-	return nil
+	return string(policyMarshal), nil
 }
 
 func generateBucketAccessAction() map[string][]string {
