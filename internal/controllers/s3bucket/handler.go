@@ -38,6 +38,7 @@ type Reconciler struct {
 	cephTenant       string
 	cephUserFullId   string
 	subuserAccessMap map[string]string
+	bucketPolicy     string
 }
 
 func NewReconciler(mgr manager.Manager, cfg *config.Config) *Reconciler {

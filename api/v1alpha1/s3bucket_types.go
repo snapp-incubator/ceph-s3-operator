@@ -38,13 +38,13 @@ type S3BucketSpec struct {
 type S3BucketStatus struct {
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=false
-	Ready bool `json:"ready,omitempty"`
+	Created bool `json:"created,omitempty"`
 
 	// +kubebuilder:validation:Optional
 	Reason string `json:"reason,omitempty"`
 
 	// +kubebuilder:validation:Optional
-	S3SubuserBinding []SubuserBinding `json:"s3SubuserBinding,omitempty"`
+	Policy string `json:"policy,omitempty"`
 }
 
 //+kubebuilder:object:root=true

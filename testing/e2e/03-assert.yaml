@@ -5,7 +5,7 @@ metadata:
   name: s3bucket-sample-delete
   namespace: s3-test
 status:
-  ready: true
+  created: true
 
 ---
 # Check CR of the retain mode
@@ -15,7 +15,7 @@ metadata:
   name: s3bucket-sample-retain
   namespace: s3-test
 status:
-  ready: true
+  created: true
 
 ---
 
@@ -46,4 +46,4 @@ metadata:
   name: s3bucket-extra-delete
   namespace: s3-test
 status:
-  ready: true
+  created: true

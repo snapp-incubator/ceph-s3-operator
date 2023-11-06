@@ -7,4 +7,4 @@ metadata:
 spec:
   s3UserRef: s3userclaim-sample
 status:
-  ready: true
+  created: true
