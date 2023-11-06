@@ -68,14 +68,15 @@ var _ webhook.Validator = &S3UserClaim{}
 
 func (suc *S3UserClaim) ValidateCreate() error {
 	s3userclaimlog.Info("validate create", "name", suc.Name)
+	allErrs := field.ErrorList{}
 
-	// Validate Quota
-	errorList := validateQuota(suc)
-	if len(errorList) == 0 {
+	allErrs = validateQuota(suc, allErrs)
+
+	if len(allErrs) == 0 {
 		return nil
 	}
 
-	return apierrors.NewInvalid(suc.GroupVersionKind().GroupKind(), suc.Name, errorList)
+	return apierrors.NewInvalid(suc.GroupVersionKind().GroupKind(), suc.Name, allErrs)
 }
 
 func (suc *S3UserClaim) ValidateUpdate(old runtime.Object) error {
@@ -95,9 +96,7 @@ func (suc *S3UserClaim) ValidateUpdate(old runtime.Object) error {
 		)
 	}
 
-	// Validate Quota
-	errorList := validateQuota(suc)
-	allErrs = append(allErrs, errorList...)
+	allErrs = validateQuota(suc, allErrs)
 
 	if len(allErrs) == 0 {
 		return nil
@@ -128,11 +127,9 @@ func (suc *S3UserClaim) ValidateDelete() error {
 	return nil
 }
 
-func validateQuota(suc *S3UserClaim) field.ErrorList {
+func validateQuota(suc *S3UserClaim, allErrs field.ErrorList) field.ErrorList {
 	ctx, cancel := context.WithTimeout(context.Background(), ValidationTimeout)
 	defer cancel()
-
-	errorList := field.ErrorList{}
 
 	quotaFieldPath := field.NewPath("spec").Child("quota")
 
@@ -140,23 +137,22 @@ func validateQuota(suc *S3UserClaim) field.ErrorList {
 
 	switch err := validateAgainstNamespaceQuota(ctx, suc); {
 	case err == consts.ErrExceededNamespaceQuota:
-		errorList = append(errorList, field.Forbidden(quotaFieldPath, err.Error()))
+		allErrs = append(allErrs, field.Forbidden(quotaFieldPath, err.Error()))
 	case err != nil:
 		s3userclaimlog.Error(err, "failed to validate against cluster quota")
-		errorList = append(errorList, field.InternalError(quotaFieldPath, fmt.Errorf(consts.ContactCloudTeamErrMessage)))
+		allErrs = append(allErrs, field.InternalError(quotaFieldPath, fmt.Errorf(consts.ContactCloudTeamErrMessage)))
 	}
 
 	switch err := validateAgainstClusterQuota(ctx, suc); {
 	case err == consts.ErrExceededClusterQuota:
-		errorList = append(errorList, field.Forbidden(quotaFieldPath, err.Error()))
+		allErrs = append(allErrs, field.Forbidden(quotaFieldPath, err.Error()))
 	case goerrors.Is(err, consts.ErrClusterQuotaNotDefined):
-		errorList = append(errorList, field.Forbidden(quotaFieldPath, err.Error()))
+		allErrs = append(allErrs, field.Forbidden(quotaFieldPath, err.Error()))
 	case err != nil:
 		s3userclaimlog.Error(err, "failed to validate against cluster quota")
-		errorList = append(errorList, field.InternalError(quotaFieldPath, fmt.Errorf(consts.ContactCloudTeamErrMessage)))
+		allErrs = append(allErrs, field.InternalError(quotaFieldPath, fmt.Errorf(consts.ContactCloudTeamErrMessage)))
 	}
-
-	return errorList
+	return allErrs
 }
 
 func validateAgainstNamespaceQuota(ctx context.Context, suc *S3UserClaim) error {
@@ -278,11 +274,6 @@ func findTeam(ctx context.Context, suc *S3UserClaim) (string, error) {
 	ns := &v1.Namespace{}
 	if err := runtimeClient.Get(ctx, types.NamespacedName{Name: suc.ObjectMeta.Namespace}, ns); err != nil {
 		return "", fmt.Errorf("failed to get namespace, %w", err)
-	}
-
-	labels := ns.ObjectMeta.Labels
-	if labels == nil {
-		labels = map[string]string{}
 	}
 
 	team, ok := ns.ObjectMeta.Labels[consts.LabelTeam]

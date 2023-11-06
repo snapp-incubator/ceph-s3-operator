@@ -1,0 +1,13 @@
+apiVersion: s3.snappcloud.io/v1alpha1
+kind: S3Bucket
+metadata:
+  name: s3bucket-sample-delete
+  namespace: s3-test
+spec:
+  s3UserRef: s3userclaim-sample
+  s3DeletionPolicy: delete
+  s3SubuserBinding:
+    - name: subuser1
+      access: write
+    - name: subuser2
+      access: read

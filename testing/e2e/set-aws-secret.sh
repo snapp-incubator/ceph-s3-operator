@@ -1,8 +1,15 @@
 #!/bin/bash
 # This file gets the s3user credentials from the secret and sets as the aws-cli credentials.
-# Replace with your Kubernetes secret name and profile name
-SECRET_NAME="s3-sample-admin-secret"
-PROFILE_NAME="ceph-test"
+# Usage: ./script.sh PROFILE_NAME SECRET_NAME
+# Example: ./script.sh ceph-test s3-sample-admin-secret
+
+if [ "$#" -ne 2 ]; then
+  echo "Usage: $0 PROFILE_NAME SECRET_NAME"
+  exit 1
+fi
+
+PROFILE_NAME="$1"
+SECRET_NAME="$2"
 REGION="us-east-1"
 
 # Get the access key and secret key from Kubernetes secret

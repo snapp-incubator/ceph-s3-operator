@@ -47,6 +47,23 @@ spec:
                 - delete
                 - retain
                 type: string
+              s3SubuserBinding:
+                items:
+                  properties:
+                    access:
+                      default: read
+                      description: access of the subuser which can be read or write
+                      enum:
+                      - read
+                      - write
+                      type: string
+                    name:
+                      description: name of the subuser
+                      type: string
+                  required:
+                  - name
+                  type: object
+                type: array
               s3UserRef:
                 type: string
             required:
@@ -58,6 +75,25 @@ spec:
               ready:
                 default: false
                 type: boolean
+              reason:
+                type: string
+              s3SubuserBinding:
+                items:
+                  properties:
+                    access:
+                      default: read
+                      description: access of the subuser which can be read or write
+                      enum:
+                      - read
+                      - write
+                      type: string
+                    name:
+                      description: name of the subuser
+                      type: string
+                  required:
+                  - name
+                  type: object
+                type: array
             type: object
         type: object
     served: true

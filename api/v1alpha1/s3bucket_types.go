@@ -29,6 +29,9 @@ type S3BucketSpec struct {
 	// +kubebuilder:validation:Enum=delete;retain
 	// +kubebuilder:default=delete
 	S3DeletionPolicy string `json:"s3DeletionPolicy,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	S3SubuserBinding []SubuserBinding `json:"s3SubuserBinding,omitempty"`
 }
 
 // S3BucketStatus defines the observed state of S3Bucket
@@ -36,6 +39,12 @@ type S3BucketStatus struct {
 	// +kubebuilder:validation:Optional
 	// +kubebuilder:default=false
 	Ready bool `json:"ready,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	Reason string `json:"reason,omitempty"`
+
+	// +kubebuilder:validation:Optional
+	S3SubuserBinding []SubuserBinding `json:"s3SubuserBinding,omitempty"`
 }
 
 //+kubebuilder:object:root=true

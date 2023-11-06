@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"regexp"
+	"strings"
 
 	"github.com/ceph/go-ceph/rgw/admin"
 	"github.com/go-logr/logr"
@@ -43,17 +44,18 @@ type Reconciler struct {
 	rgwClient *admin.API
 
 	// reconcile specific variables
-	clusterResourceQuota   *openshiftquota.ClusterResourceQuota
-	s3UserClaim            *s3v1alpha1.S3UserClaim
-	cephUser               admin.User
-	s3UserClaimNamespace   string
-	cephTenant             string
-	cephUserId             string
-	cephUserFullId         string
-	cephDisplayName        string
-	s3UserName             string
-	readonlyCephUserId     string
-	readonlyCephUserFullId string
+	clusterResourceQuota      *openshiftquota.ClusterResourceQuota
+	s3UserClaim               *s3v1alpha1.S3UserClaim
+	cephUser                  admin.User
+	s3UserClaimNamespace      string
+	cephTenant                string
+	cephUserId                string
+	cephUserFullId            string
+	cephDisplayName           string
+	s3UserName                string
+	readonlyCephUserId        string
+	readonlyCephUserFullId    string
+	desiredSubusersStringList []string
 
 	// configurations
 	clusterName  string
@@ -104,7 +106,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			return r.Cleanup(ctx)
 		}
 	}
-
 	return r.Provision(ctx)
 }
 
@@ -128,4 +129,21 @@ func (r *Reconciler) initVars(req ctrl.Request) {
 	r.readonlyCephUserFullId = fmt.Sprintf("%s:%s", r.cephUserFullId, r.readonlyCephUserId)
 
 	r.s3UserName = fmt.Sprintf("%s.%s", req.Namespace, req.Name)
+}
+
+func generateSubuserFullId(cephUserFullId string, subuser string) string {
+	return fmt.Sprintf("%s:%s", cephUserFullId, subuser)
+}
+
+func generateSubuserSecretName(s3UserClaimName string, subuser string) string {
+	return fmt.Sprintf("%s-%s", s3UserClaimName, subuser)
+}
+
+func extractSubuserName(cephSubuserFullId string) (string, error) {
+	parts := strings.Split(cephSubuserFullId, ":")
+	if len(parts) == 2 {
+		return parts[1], nil
+	} else {
+		return "", fmt.Errorf("cannot parse the cephSubuserFullId=%s", cephSubuserFullId)
+	}
 }

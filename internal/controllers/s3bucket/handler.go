@@ -3,6 +3,7 @@ package s3bucket
 import (
 	"context"
 	"fmt"
+	"regexp"
 
 	"github.com/go-logr/logr"
 	"github.com/opdev/subreconciler"
@@ -29,10 +30,14 @@ type Reconciler struct {
 	logger  logr.Logger
 	s3Agent *s3_agent.S3Agent
 	// reconcile specific variables
-	s3Bucket     *s3v1alpha1.S3Bucket
-	s3UserRef    string
-	s3BucketName string
-	rgwEndpoint  string
+	s3Bucket         *s3v1alpha1.S3Bucket
+	s3UserRef        string
+	s3BucketName     string
+	rgwEndpoint      string
+	clusterName      string
+	cephTenant       string
+	cephUserFullId   string
+	subuserAccessMap map[string]string
 }
 
 func NewReconciler(mgr manager.Manager, cfg *config.Config) *Reconciler {
@@ -41,6 +46,7 @@ func NewReconciler(mgr manager.Manager, cfg *config.Config) *Reconciler {
 		Client:      mgr.GetClient(),
 		scheme:      mgr.GetScheme(),
 		rgwEndpoint: cfg.Rgw.Endpoint,
+		clusterName: cfg.ClusterName,
 	}
 }
 
@@ -72,6 +78,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			r.logger.Error(err, "Failed to login on S3 with the user credentials")
 			return subreconciler.Evaluate(subreconciler.Requeue())
 		}
+		// Initialize ceph tenant and cephFullUserId variables
+		r.initVars(req)
 		// Delete event
 		if r.s3Bucket.ObjectMeta.DeletionTimestamp != nil {
 			return r.Cleanup(ctx)
@@ -103,5 +111,22 @@ func (r *Reconciler) setS3Agent(ctx context.Context, req ctrl.Request) error {
 	if err != nil {
 		return err
 	}
+
 	return nil
+}
+
+func (r *Reconciler) initVars(req ctrl.Request) {
+	// TODO: This function is mutual with the s3userclaim handler. It should be moved to a higher layer.
+	// Only alphanumeric characters and underscore are allowed for tenant name
+	k8sNameSpecialChars := regexp.MustCompile(`[.-]`)
+	namespace := k8sNameSpecialChars.ReplaceAllString(req.Namespace, "_")
+	clusterName := k8sNameSpecialChars.ReplaceAllString(r.clusterName, "_")
+	r.cephTenant = fmt.Sprintf("%s__%s", clusterName, namespace)
+	r.cephUserFullId = fmt.Sprintf("%s$%s", r.cephTenant, r.s3UserRef)
+
+	r.subuserAccessMap = make(map[string]string)
+	for _, binding := range r.s3Bucket.Spec.S3SubuserBinding {
+		r.subuserAccessMap[binding.Name] = binding.Access
+	}
+
 }

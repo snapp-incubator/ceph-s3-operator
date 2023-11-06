@@ -114,8 +114,16 @@ test: manifests generate fmt vet envtest setup-dev-env ## Run tests.
 .PHONY: e2e-test
 e2e-test: docker-build # Run e2e tests
 	kubectl kuttl test
-##@ Build
 
+.PHONY: e2e-test-local
+e2e-test-local: docker-build # Run e2e tests for local development purposes
+	kind load docker-image $(IMG)
+	kubectl delete pod -n s3-operator-system -l control-plane=controller-manager
+	kubectl delete s3b --all -A
+	kubectl delete s3u --all -A
+	kubectl kuttl test --start-kind=false
+
+##@ Build
 .PHONY: build
 build: manifests generate fmt vet ## Build manager binary.
 	go build -o bin/manager main.go

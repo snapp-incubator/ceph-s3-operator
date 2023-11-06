@@ -1,0 +1,19 @@
+# Assert that this user would see the buckets
+apiVersion: kuttl.dev/v1beta1
+kind: TestAssert
+timeout: 5
+commands:
+  # Subuser1 must be able to get the object from the bucket
+- script: aws s3 --endpoint-url "http://127.0.0.1:8000" cp s3://s3bucket-sample-delete/test-object.txt - --profile ceph-subuser1 | grep "Hello, S3!"
+  # Subuser1 must be able to delete the object
+- script: aws s3 --endpoint-url "http://127.0.0.1:8000" rm s3://s3bucket-sample-delete/test-object.txt --profile ceph-subuser1
+  # Subuser1 must be able to put an object in the bucket 
+- script: echo "Hello, S3!" | aws s3 --endpoint-url "http://127.0.0.1:8000" cp - s3://s3bucket-sample-delete/test-object.txt --profile ceph-subuser1
+  # Subuser2 must now be able to get the object
+- script: aws s3 --endpoint-url "http://127.0.0.1:8000" cp s3://s3bucket-sample-delete/test-object.txt - --profile ceph-subuser2 | grep "Hello, S3!"
+  # Subuser2 must not be able to put an object in the bucket 
+- script: echo "Hello, S3!" | aws s3 --endpoint-url "http://127.0.0.1:8000" cp - s3://s3bucket-sample-delete/test-object.txt --profile ceph-subuser2 && exit 1 || exit 0
+  # Subuser2 must be able to delete the object
+- script: aws s3 --endpoint-url "http://127.0.0.1:8000" rm s3://s3bucket-sample-delete/test-object.txt --profile ceph-subuser2 && exit 1 || exit 0
+  # Empty the bucket
+- script: aws s3 --endpoint-url "http://127.0.0.1:8000" rm s3://s3bucket-sample-delete/test-object.txt --profile ceph-subuser1

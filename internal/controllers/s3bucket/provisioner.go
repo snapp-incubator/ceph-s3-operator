@@ -20,7 +20,8 @@ func (r *Reconciler) Provision(ctx context.Context) (ctrl.Result, error) {
 	// Do the actual reconcile work
 	subrecs := []subreconciler.Fn{
 		r.ensureBucket,
-		r.updateBucketStatus,
+		r.ensureBucketPolicy,
+		r.updateBucketStatusSuccess,
 		r.addCleanupFinalizer,
 	}
 	for _, subrec := range subrecs {
@@ -41,9 +42,26 @@ func (r *Reconciler) ensureBucket(ctx context.Context) (*ctrl.Result, error) {
 	return subreconciler.ContinueReconciling()
 }
 
-func (r *Reconciler) updateBucketStatus(ctx context.Context) (*ctrl.Result, error) {
+func (r *Reconciler) ensureBucketPolicy(ctx context.Context) (*ctrl.Result, error) {
+	err := r.s3Agent.SetBucketPolicy(r.subuserAccessMap,
+		r.cephTenant, r.s3UserRef, r.s3BucketName)
+	if err != nil {
+		r.logger.Error(err, "failed to set the bucket policy")
+		r.updateBucketStatus(ctx, false, err.Error())
+		return subreconciler.Requeue()
+	}
+	return subreconciler.ContinueReconciling()
+}
+
+func (r *Reconciler) updateBucketStatusSuccess(ctx context.Context) (*ctrl.Result, error) {
+	return r.updateBucketStatus(ctx, true, "")
+}
+func (r *Reconciler) updateBucketStatus(ctx context.Context,
+	ready bool, reason string) (*ctrl.Result, error) {
 	status := s3v1alpha1.S3BucketStatus{
-		Ready: true,
+		Ready:            ready,
+		Reason:           reason,
+		S3SubuserBinding: r.s3Bucket.Spec.S3SubuserBinding,
 	}
 
 	if !apiequality.Semantic.DeepEqual(r.s3Bucket.Status, status) {

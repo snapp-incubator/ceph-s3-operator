@@ -1,9 +1,45 @@
----
+# Assert creating the secret
+apiVersion: v1
+kind: Secret
+metadata:
+  name: s3userclaim-sample-subuser1
+  namespace: s3-test
+type: Opaque
 
+---
+# Assert creating the secret
+apiVersion: v1
+kind: Secret
+metadata:
+  name: s3userclaim-sample-subuser2
+  namespace: s3-test
+type: Opaque
+---
+# Assert the status of s3userclaim
+apiVersion: s3.snappcloud.io/v1alpha1
+kind: S3UserClaim
+metadata:
+  name: s3userclaim-sample
+  namespace: s3-test
+status:
+  quota:
+    maxSize: 10k
+    maxObjects: "500"
+    maxBuckets: 5
+  subusers:
+    - subuser1
+    - subuser2
+---
 apiVersion: kuttl.dev/v1beta1
 kind: TestAssert
-timeout: 30
 commands:
-  # Check if the buckets are existed on s3
-- script: aws --endpoint-url "http://127.0.0.1:8000" s3api list-buckets --profile ceph-test | grep s3bucket-sample-delete | [ $(wc -c) -eq 0 ]
-- script: aws --endpoint-url "http://127.0.0.1:8000" s3api list-buckets --profile ceph-test | grep s3bucket-sample-retain 
+# Login with subuser 1
+- command: testing/e2e/set-aws-secret.sh ceph-subuser1 s3userclaim-sample-subuser1
+# Subuser most be able to see the buckets
+- script: aws --endpoint-url "http://127.0.0.1:8000" s3api list-buckets --profile ceph-subuser1 | grep s3bucket-sample-delete
+# Subuser most not be able to get an object
+- script: aws s3 --endpoint-url "http://127.0.0.1:8000" cp s3://s3bucket-sample-delete/test-object.txt - --profile ceph-subuser1 && exit 1 || exit 0
+  # Subuser1 must not be able to put an object in the bucket 
+- script: echo "Hello, S3!" | aws s3 --endpoint-url "http://127.0.0.1:8000" cp - s3://s3bucket-sample-delete/test-object.txt --profile ceph-subuser1 && exit 1 || exit 0
+  # Subuser1 must be able to delete the object
+- script: aws s3 --endpoint-url "http://127.0.0.1:8000" rm s3://s3bucket-sample-delete/test-object.txt --profile ceph-subuser1 && exit 1 || exit 0

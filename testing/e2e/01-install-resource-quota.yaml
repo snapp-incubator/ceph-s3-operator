@@ -6,7 +6,7 @@ spec:
   quota:
     hard:
       s3/objects: 5k
-      s3/size: 12k
+      s3/size: 22k
       s3/buckets: 5k
   selector:
     labels:
