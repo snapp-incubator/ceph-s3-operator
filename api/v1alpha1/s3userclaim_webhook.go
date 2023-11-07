@@ -184,13 +184,13 @@ func CalculateClusterUsedQuota(ctx context.Context, runtimeClient client.Client,
 	suc *S3UserClaim, cleanPhase bool) (*TotalQuota, string, error) {
 	totalClusterUsedQuota := TotalQuota{}
 	// Find team's clusterResourceQuota
-	team, err := findTeam(ctx, suc)
+	team, err := findTeam(ctx, runtimeClient, suc)
 	if err != nil {
 		return &totalClusterUsedQuota, "", fmt.Errorf("failed to find team, %w", err)
 	}
 
 	// Sum all resource requests in team's namespaces
-	namespaces, err := findTeamNamespaces(ctx, team)
+	namespaces, err := findTeamNamespaces(ctx, runtimeClient, team)
 	if err != nil {
 		return &totalClusterUsedQuota, team, fmt.Errorf("failed to find team namespaces, %w", err)
 	}
@@ -288,7 +288,7 @@ func validateAgainstClusterQuota(ctx context.Context, suc *S3UserClaim) error {
 	return nil
 }
 
-func findTeam(ctx context.Context, suc *S3UserClaim) (string, error) {
+func findTeam(ctx context.Context, runtimeClient client.Client, suc *S3UserClaim) (string, error) {
 	ns := &v1.Namespace{}
 	if err := runtimeClient.Get(ctx, types.NamespacedName{Name: suc.ObjectMeta.Namespace}, ns); err != nil {
 		return "", fmt.Errorf("failed to get namespace, %w", err)
@@ -302,7 +302,7 @@ func findTeam(ctx context.Context, suc *S3UserClaim) (string, error) {
 	return team, nil
 }
 
-func findTeamNamespaces(ctx context.Context, team string) ([]string, error) {
+func findTeamNamespaces(ctx context.Context, runtimeClient client.Client, team string) ([]string, error) {
 	var namespaces []string
 
 	namespaceList := &v1.NamespaceList{}
