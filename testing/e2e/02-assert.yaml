@@ -113,3 +113,20 @@ metadata:
     kind: S3UserClaim
     name: s3userclaim-extra
 type: Opaque
+
+---
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: example-quota
+  namespace: s3-test
+status:
+  hard:
+    s3/buckets: "15"
+    s3/objects: 1k
+    s3/size: 20k
+  used:
+    s3/buckets: "15"
+    s3/objects: 1k
+    s3/size: 20k
+

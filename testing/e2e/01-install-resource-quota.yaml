@@ -12,3 +12,14 @@ spec:
     labels:
       matchLabels:
         snappcloud.io/team: myteam
+---
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: example-quota
+  namespace: s3-test
+spec:
+  hard:
+    s3/objects: 1000
+    s3/size: 20000
+    s3/buckets: 15
