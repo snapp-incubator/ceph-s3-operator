@@ -25,7 +25,6 @@ import (
 	openshiftquota "github.com/openshift/api/quota/v1"
 	v1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/validation/field"
@@ -178,6 +177,40 @@ func CalculateNamespaceUsedQuota(ctx context.Context, uncachedReader client.Read
 	return &totalUsedQuota, nil
 }
 
+func CalculateClusterUsedQuota(ctx context.Context,
+	runtimeClient client.Client, suc *S3UserClaim) (*TotalQuota, string, error) {
+	totalClusterUsedQuota := TotalQuota{}
+	// Find team's clusterResourceQuota
+	team, err := findTeam(ctx, suc)
+	if err != nil {
+		return &totalClusterUsedQuota, "", fmt.Errorf("failed to find team, %w", err)
+	}
+
+	// Sum all resource requests in team's namespaces
+	namespaces, err := findTeamNamespaces(ctx, team)
+	if err != nil {
+		return &totalClusterUsedQuota, team, fmt.Errorf("failed to find team namespaces, %w", err)
+	}
+	for _, ns := range namespaces {
+		s3UserClaimList := &S3UserClaimList{}
+		if err := uncachedReader.List(ctx, s3UserClaimList, client.InNamespace(ns)); err != nil {
+			return &totalClusterUsedQuota, team, fmt.Errorf("failed to list s3UserClaims, %w", err)
+		}
+
+		for _, claim := range s3UserClaimList.Items {
+			if claim.Name != suc.Name || claim.Namespace != suc.Namespace {
+				totalClusterUsedQuota.MaxObjects.Add(claim.Spec.Quota.MaxObjects)
+				totalClusterUsedQuota.MaxSize.Add(claim.Spec.Quota.MaxSize)
+				totalClusterUsedQuota.MaxBuckets += int64(claim.Spec.Quota.MaxBuckets)
+			}
+		}
+	}
+	totalClusterUsedQuota.MaxObjects.Add(suc.Spec.Quota.MaxObjects)
+	totalClusterUsedQuota.MaxSize.Add(suc.Spec.Quota.MaxSize)
+	totalClusterUsedQuota.MaxBuckets += int64(suc.Spec.Quota.MaxBuckets)
+	return &totalClusterUsedQuota, team, nil
+}
+
 func validateAgainstNamespaceQuota(ctx context.Context, suc *S3UserClaim) error {
 	totalUsedQuota, err := CalculateNamespaceUsedQuota(ctx, uncachedReader, suc)
 	if err != nil {
@@ -211,11 +244,11 @@ func validateAgainstNamespaceQuota(ctx context.Context, suc *S3UserClaim) error 
 }
 
 func validateAgainstClusterQuota(ctx context.Context, suc *S3UserClaim) error {
-	// Find team's clusterResourceQuota
-	team, err := findTeam(ctx, suc)
+	totalClusterUsedQuota, team, err := CalculateClusterUsedQuota(ctx, runtimeClient, suc)
 	if err != nil {
-		return fmt.Errorf("failed to find team, %w", err)
+		return fmt.Errorf("failed to calculate cluster resource used quota , %w", err)
 	}
+
 	clusterQuota := &openshiftquota.ClusterResourceQuota{}
 	if err := runtimeClient.Get(ctx, types.NamespacedName{Name: team}, clusterQuota); err != nil {
 		if apierrors.IsNotFound(err) {
@@ -223,50 +256,23 @@ func validateAgainstClusterQuota(ctx context.Context, suc *S3UserClaim) error {
 		}
 		return fmt.Errorf("failed to get clusterQuota, %w", err)
 	}
-
-	// Sum all resource requests in team's namespaces
-	totalMaxObjects := resource.Quantity{}
-	totalMaxSize := resource.Quantity{}
-	totalMaxBuckets := int64(0)
-	namespaces, err := findTeamNamespaces(ctx, team)
-	if err != nil {
-		return fmt.Errorf("failed to find team namespaces, %w", err)
-	}
-	for _, ns := range namespaces {
-		s3UserClaimList := &S3UserClaimList{}
-		if err := uncachedReader.List(ctx, s3UserClaimList, client.InNamespace(ns)); err != nil {
-			return fmt.Errorf("failed to list s3UserClaims, %w", err)
-		}
-
-		for _, claim := range s3UserClaimList.Items {
-			if claim.Name != suc.Name || claim.Namespace != suc.Namespace {
-				totalMaxObjects.Add(claim.Spec.Quota.MaxObjects)
-				totalMaxSize.Add(claim.Spec.Quota.MaxSize)
-				totalMaxBuckets += int64(claim.Spec.Quota.MaxBuckets)
-			}
-		}
-	}
-	totalMaxObjects.Add(suc.Spec.Quota.MaxObjects)
-	totalMaxSize.Add(suc.Spec.Quota.MaxSize)
-	totalMaxBuckets += int64(suc.Spec.Quota.MaxBuckets)
-
 	// Validate against clusterResourceQuota
 	if maxObjects, ok := clusterQuota.Spec.Quota.Hard[consts.ResourceNameS3MaxObjects]; ok {
-		if totalMaxObjects.Cmp(maxObjects) > 0 {
+		if totalClusterUsedQuota.MaxObjects.Cmp(maxObjects) > 0 {
 			return consts.ErrExceededClusterQuota
 		}
 	} else {
 		return fmt.Errorf("%w, team=%s", consts.ErrClusterQuotaNotDefined, team)
 	}
 	if maxSize, ok := clusterQuota.Spec.Quota.Hard[consts.ResourceNameS3MaxSize]; ok {
-		if totalMaxSize.Cmp(maxSize) > 0 {
+		if totalClusterUsedQuota.MaxSize.Cmp(maxSize) > 0 {
 			return consts.ErrExceededClusterQuota
 		}
 	} else {
 		return fmt.Errorf("%w, team=%s", consts.ErrClusterQuotaNotDefined, team)
 	}
 	if maxBuckets, ok := clusterQuota.Spec.Quota.Hard[consts.ResourceNameS3MaxBuckets]; ok {
-		if totalMaxBuckets > maxBuckets.Value() {
+		if totalClusterUsedQuota.MaxBuckets > maxBuckets.Value() {
 			return consts.ErrExceededClusterQuota
 		}
 	} else {

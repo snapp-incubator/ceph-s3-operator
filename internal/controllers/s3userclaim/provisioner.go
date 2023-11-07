@@ -8,6 +8,7 @@ import (
 
 	"github.com/ceph/go-ceph/rgw/admin"
 	"github.com/opdev/subreconciler"
+	openshiftquota "github.com/openshift/api/quota/v1"
 	corev1 "k8s.io/api/core/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -39,7 +40,8 @@ func (r *Reconciler) Provision(ctx context.Context) (ctrl.Result, error) {
 		r.ensureOtherSubusersSecret,
 		r.ensureS3User,
 		r.updateS3UserClaimStatus,
-		r.updateResourceQuotaStatus,
+		r.updateNamespaceResourceQuotaStatus,
+		r.updateClusterResourceQuotaStatus,
 		r.addCleanupFinalizer,
 	}
 	for _, subrec := range subrecs {
@@ -252,13 +254,14 @@ func (r *Reconciler) updateS3UserClaimStatus(ctx context.Context) (*ctrl.Result,
 	return subreconciler.ContinueReconciling()
 }
 
-func (r *Reconciler) updateResourceQuotaStatus(ctx context.Context) (*ctrl.Result, error) {
+func (r *Reconciler) updateNamespaceResourceQuotaStatus(ctx context.Context) (*ctrl.Result, error) {
+	// sum up all quotas in the namespace
 	totalUsedQuota, err := s3v1alpha1.CalculateNamespaceUsedQuota(ctx, r.uncachedReader, r.s3UserClaim)
 	if err != nil {
 		r.logger.Error(err, "failed to calculate namespace used quota")
 		return subreconciler.Requeue()
 	}
-	// Sum up all quotas in the namespace and update the resource quota used field in status
+	// update the resource quota status used field
 	resourceQuotaList := &corev1.ResourceQuotaList{}
 	err = r.Client.List(ctx, resourceQuotaList, client.InNamespace(r.s3UserClaimNamespace))
 	if err != nil {
@@ -285,6 +288,46 @@ func (r *Reconciler) updateResourceQuotaStatus(ctx context.Context) (*ctrl.Resul
 			}
 		}
 	}
+	return subreconciler.ContinueReconciling()
+}
+
+func (r *Reconciler) updateClusterResourceQuotaStatus(ctx context.Context) (*ctrl.Result, error) {
+	// sum up all quotas in the cluster related to the team label
+	totalClusterUsedQuota, team, err := s3v1alpha1.CalculateClusterUsedQuota(ctx, r.Client, r.s3UserClaim)
+	if err != nil {
+		r.logger.Error(err, "failed to calculate cluster used quota")
+		return subreconciler.Requeue()
+	}
+	// update the cluster resource quota status
+	clusterQuota := &openshiftquota.ClusterResourceQuota{}
+	if err := r.Get(ctx, types.NamespacedName{Name: team}, clusterQuota); err != nil {
+		if apierrors.IsNotFound(err) {
+			r.logger.Error(err, "%w, team=%s", consts.ErrClusterQuotaNotDefined, team)
+			return subreconciler.Requeue()
+		}
+		r.logger.Error(err, "failed to get clusterQuota, %w", err)
+		return subreconciler.Requeue()
+	}
+
+	status := clusterQuota.Status.DeepCopy()
+	if status.Total.Used == nil {
+		status.Total.Used = corev1.ResourceList{}
+	}
+	status.Total.Used[consts.ResourceNameS3MaxObjects] = totalClusterUsedQuota.MaxObjects
+	status.Total.Used[consts.ResourceNameS3MaxSize] = totalClusterUsedQuota.MaxSize
+	status.Total.Used[consts.ResourceNameS3MaxBuckets] = *resource.NewQuantity(totalClusterUsedQuota.MaxBuckets, resource.DecimalSI)
+	if !apiequality.Semantic.DeepEqual(clusterQuota.Status, *status) {
+		clusterQuota.Status = *status
+		if err := r.Status().Update(ctx, clusterQuota); err != nil {
+			if strings.Contains(err.Error(), genericregistry.OptimisticLockErrorMsg) {
+				r.logger.Info("re-queuing item due to optimistic locking on resource", "error", err.Error())
+			} else {
+				r.logger.Error(err, "failed to update cluster resource quota status")
+			}
+			return subreconciler.Requeue()
+		}
+	}
+
 	return subreconciler.ContinueReconciling()
 }
 func (r *Reconciler) addCleanupFinalizer(ctx context.Context) (*ctrl.Result, error) {
