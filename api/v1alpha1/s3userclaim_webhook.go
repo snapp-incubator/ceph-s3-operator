@@ -155,7 +155,7 @@ func validateQuota(suc *S3UserClaim, allErrs field.ErrorList) field.ErrorList {
 }
 
 func CalculateNamespaceUsedQuota(ctx context.Context, uncachedReader client.Reader,
-	suc *S3UserClaim) (*TotalQuota, error) {
+	suc *S3UserClaim, cleanPhase bool) (*TotalQuota, error) {
 	totalUsedQuota := TotalQuota{}
 	// List all s3UserClaims in the namespace
 	s3UserClaimList := &S3UserClaimList{}
@@ -171,14 +171,17 @@ func CalculateNamespaceUsedQuota(ctx context.Context, uncachedReader client.Read
 			totalUsedQuota.MaxBuckets += int64(claim.Spec.Quota.MaxBuckets)
 		}
 	}
-	totalUsedQuota.MaxObjects.Add(suc.Spec.Quota.MaxObjects)
-	totalUsedQuota.MaxSize.Add(suc.Spec.Quota.MaxSize)
-	totalUsedQuota.MaxBuckets += int64(suc.Spec.Quota.MaxBuckets)
+	// Don't add the current user quota if the function is called by the cleaner
+	if !cleanPhase {
+		totalUsedQuota.MaxObjects.Add(suc.Spec.Quota.MaxObjects)
+		totalUsedQuota.MaxSize.Add(suc.Spec.Quota.MaxSize)
+		totalUsedQuota.MaxBuckets += int64(suc.Spec.Quota.MaxBuckets)
+	}
 	return &totalUsedQuota, nil
 }
 
-func CalculateClusterUsedQuota(ctx context.Context,
-	runtimeClient client.Client, suc *S3UserClaim) (*TotalQuota, string, error) {
+func CalculateClusterUsedQuota(ctx context.Context, runtimeClient client.Client,
+	suc *S3UserClaim, cleanPhase bool) (*TotalQuota, string, error) {
 	totalClusterUsedQuota := TotalQuota{}
 	// Find team's clusterResourceQuota
 	team, err := findTeam(ctx, suc)
@@ -205,14 +208,17 @@ func CalculateClusterUsedQuota(ctx context.Context,
 			}
 		}
 	}
-	totalClusterUsedQuota.MaxObjects.Add(suc.Spec.Quota.MaxObjects)
-	totalClusterUsedQuota.MaxSize.Add(suc.Spec.Quota.MaxSize)
-	totalClusterUsedQuota.MaxBuckets += int64(suc.Spec.Quota.MaxBuckets)
+	// Don't add the current user quota if the function is called by the cleaner
+	if !cleanPhase {
+		totalClusterUsedQuota.MaxObjects.Add(suc.Spec.Quota.MaxObjects)
+		totalClusterUsedQuota.MaxSize.Add(suc.Spec.Quota.MaxSize)
+		totalClusterUsedQuota.MaxBuckets += int64(suc.Spec.Quota.MaxBuckets)
+	}
 	return &totalClusterUsedQuota, team, nil
 }
 
 func validateAgainstNamespaceQuota(ctx context.Context, suc *S3UserClaim) error {
-	totalUsedQuota, err := CalculateNamespaceUsedQuota(ctx, uncachedReader, suc)
+	totalUsedQuota, err := CalculateNamespaceUsedQuota(ctx, uncachedReader, suc, false)
 	if err != nil {
 		return fmt.Errorf("failed to calculate namespace used quota , %w", err)
 	}
@@ -244,7 +250,7 @@ func validateAgainstNamespaceQuota(ctx context.Context, suc *S3UserClaim) error 
 }
 
 func validateAgainstClusterQuota(ctx context.Context, suc *S3UserClaim) error {
-	totalClusterUsedQuota, team, err := CalculateClusterUsedQuota(ctx, runtimeClient, suc)
+	totalClusterUsedQuota, team, err := CalculateClusterUsedQuota(ctx, runtimeClient, suc, false)
 	if err != nil {
 		return fmt.Errorf("failed to calculate cluster resource used quota , %w", err)
 	}

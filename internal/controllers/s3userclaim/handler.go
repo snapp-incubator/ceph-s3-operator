@@ -57,7 +57,7 @@ type Reconciler struct {
 	readonlyCephUserId        string
 	readonlyCephUserFullId    string
 	desiredSubusersStringList []string
-
+	cleanPhase                bool
 	// configurations
 	clusterName  string
 	rgwAccessKey string
