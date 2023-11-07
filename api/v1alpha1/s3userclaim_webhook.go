@@ -155,47 +155,53 @@ func validateQuota(suc *S3UserClaim, allErrs field.ErrorList) field.ErrorList {
 	return allErrs
 }
 
-func validateAgainstNamespaceQuota(ctx context.Context, suc *S3UserClaim) error {
+func CalculateNamespaceUsedQuota(ctx context.Context, uncachedReader client.Reader,
+	suc *S3UserClaim) (*TotalQuota, error) {
+	totalUsedQuota := TotalQuota{}
 	// List all s3UserClaims in the namespace
 	s3UserClaimList := &S3UserClaimList{}
 	if err := uncachedReader.List(ctx, s3UserClaimList, client.InNamespace(suc.Namespace)); err != nil {
-		return fmt.Errorf("failed to list s3 user claims, %w", err)
+		return &totalUsedQuota, fmt.Errorf("failed to list s3 user claims, %w", err)
 	}
 
 	// Sum all resource requests
-	totalMaxObjects := resource.Quantity{}
-	totalMaxSize := resource.Quantity{}
-	totalMaxBuckets := int64(0)
 	for _, claim := range s3UserClaimList.Items {
 		if claim.Name != suc.Name {
-			totalMaxObjects.Add(claim.Spec.Quota.MaxObjects)
-			totalMaxSize.Add(claim.Spec.Quota.MaxSize)
-			totalMaxBuckets += int64(claim.Spec.Quota.MaxBuckets)
+			totalUsedQuota.MaxObjects.Add(claim.Spec.Quota.MaxObjects)
+			totalUsedQuota.MaxSize.Add(claim.Spec.Quota.MaxSize)
+			totalUsedQuota.MaxBuckets += int64(claim.Spec.Quota.MaxBuckets)
 		}
 	}
-	totalMaxObjects.Add(suc.Spec.Quota.MaxObjects)
-	totalMaxSize.Add(suc.Spec.Quota.MaxSize)
-	totalMaxBuckets += int64(suc.Spec.Quota.MaxBuckets)
+	totalUsedQuota.MaxObjects.Add(suc.Spec.Quota.MaxObjects)
+	totalUsedQuota.MaxSize.Add(suc.Spec.Quota.MaxSize)
+	totalUsedQuota.MaxBuckets += int64(suc.Spec.Quota.MaxBuckets)
+	return &totalUsedQuota, nil
+}
 
+func validateAgainstNamespaceQuota(ctx context.Context, suc *S3UserClaim) error {
+	totalUsedQuota, err := CalculateNamespaceUsedQuota(ctx, uncachedReader, suc)
+	if err != nil {
+		return fmt.Errorf("failed to calculate namespace used quota , %w", err)
+	}
 	// List all quotas in the namespace and validate against them
 	resourceQuotaList := &v1.ResourceQuotaList{}
-	err := runtimeClient.List(ctx, resourceQuotaList, client.InNamespace(suc.Namespace))
+	err = runtimeClient.List(ctx, resourceQuotaList, client.InNamespace(suc.Namespace))
 	if err != nil {
 		return fmt.Errorf("failed to list resource quotas, %w", err)
 	}
 	for _, quota := range resourceQuotaList.Items {
 		if maxObjects, ok := quota.Spec.Hard[consts.ResourceNameS3MaxObjects]; ok {
-			if totalMaxObjects.Cmp(maxObjects) > 0 {
+			if totalUsedQuota.MaxObjects.Cmp(maxObjects) > 0 {
 				return consts.ErrExceededNamespaceQuota
 			}
 		}
 		if maxSize, ok := quota.Spec.Hard[consts.ResourceNameS3MaxSize]; ok {
-			if totalMaxSize.Cmp(maxSize) > 0 {
+			if totalUsedQuota.MaxSize.Cmp(maxSize) > 0 {
 				return consts.ErrExceededNamespaceQuota
 			}
 		}
 		if maxBuckets, ok := quota.Spec.Hard[consts.ResourceNameS3MaxBuckets]; ok {
-			if totalMaxBuckets > maxBuckets.Value() {
+			if totalUsedQuota.MaxBuckets > maxBuckets.Value() {
 				return consts.ErrExceededNamespaceQuota
 			}
 		}

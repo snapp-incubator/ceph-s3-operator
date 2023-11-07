@@ -11,12 +11,14 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	genericregistry "k8s.io/apiserver/pkg/registry/generic/registry"
 	"k8s.io/client-go/tools/reference"
 	"k8s.io/utils/pointer"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	s3v1alpha1 "github.com/snapp-incubator/s3-operator/api/v1alpha1"
@@ -37,6 +39,7 @@ func (r *Reconciler) Provision(ctx context.Context) (ctrl.Result, error) {
 		r.ensureOtherSubusersSecret,
 		r.ensureS3User,
 		r.updateS3UserClaimStatus,
+		r.updateResourceQuotaStatus,
 		r.addCleanupFinalizer,
 	}
 	for _, subrec := range subrecs {
@@ -249,6 +252,41 @@ func (r *Reconciler) updateS3UserClaimStatus(ctx context.Context) (*ctrl.Result,
 	return subreconciler.ContinueReconciling()
 }
 
+func (r *Reconciler) updateResourceQuotaStatus(ctx context.Context) (*ctrl.Result, error) {
+	totalUsedQuota, err := s3v1alpha1.CalculateNamespaceUsedQuota(ctx, r.uncachedReader, r.s3UserClaim)
+	if err != nil {
+		r.logger.Error(err, "failed to calculate namespace used quota")
+		return subreconciler.Requeue()
+	}
+	// Sum up all quotas in the namespace and update the resource quota used field in status
+	resourceQuotaList := &corev1.ResourceQuotaList{}
+	err = r.Client.List(ctx, resourceQuotaList, client.InNamespace(r.s3UserClaimNamespace))
+	if err != nil {
+		r.logger.Error(err, "failed to list resource quotas")
+		return subreconciler.Requeue()
+	}
+	for _, quota := range resourceQuotaList.Items {
+		status := quota.Status.DeepCopy()
+		if status.Used == nil {
+			status.Used = corev1.ResourceList{}
+		}
+		status.Used[consts.ResourceNameS3MaxObjects] = totalUsedQuota.MaxObjects
+		status.Used[consts.ResourceNameS3MaxSize] = totalUsedQuota.MaxSize
+		status.Used[consts.ResourceNameS3MaxBuckets] = *resource.NewQuantity(totalUsedQuota.MaxBuckets, resource.DecimalSI)
+		if !apiequality.Semantic.DeepEqual(quota.Status, *status) {
+			quota.Status = *status
+			if err := r.Status().Update(ctx, &quota); err != nil {
+				if strings.Contains(err.Error(), genericregistry.OptimisticLockErrorMsg) {
+					r.logger.Info("re-queuing item due to optimistic locking on resource", "error", err.Error())
+				} else {
+					r.logger.Error(err, "failed to update namespace quota status")
+				}
+				return subreconciler.Requeue()
+			}
+		}
+	}
+	return subreconciler.ContinueReconciling()
+}
 func (r *Reconciler) addCleanupFinalizer(ctx context.Context) (*ctrl.Result, error) {
 	if objUpdated := controllerutil.AddFinalizer(r.s3UserClaim, consts.S3UserClaimCleanupFinalizer); objUpdated {
 		if err := r.Update(ctx, r.s3UserClaim); err != nil {

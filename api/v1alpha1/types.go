@@ -12,6 +12,16 @@ type UserQuota struct {
 	MaxBuckets int `json:"maxBuckets,omitempty"`
 }
 
+// TotalUserQuota specifies the total used quota for a list of users in Ceph
+type TotalQuota struct {
+	// max number of bytes the user can store
+	MaxSize resource.Quantity `json:"maxSize,omitempty"`
+	// max number of objects the user can store
+	MaxObjects resource.Quantity `json:"maxObjects,omitempty"`
+	// max number of buckets the user can create
+	MaxBuckets int64 `json:"maxBuckets,omitempty"`
+}
+
 // +kubebuilder:validation:Pattern=^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
 type Subuser string
 type SubuserBinding struct {
