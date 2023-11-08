@@ -12,8 +12,8 @@ import (
 )
 
 func CalculateNamespaceUsedQuota(ctx context.Context, uncachedReader client.Reader,
-	suc *S3UserClaim, addCurrentQuota bool) (*TotalQuota, error) {
-	totalUsedQuota := TotalQuota{}
+	suc *S3UserClaim, addCurrentQuota bool) (*UserQuota, error) {
+	totalUsedQuota := UserQuota{}
 	// List all s3UserClaims in the namespace
 	s3UserClaimList := &S3UserClaimList{}
 	if err := uncachedReader.List(ctx, s3UserClaimList, client.InNamespace(suc.Namespace)); err != nil {
@@ -25,21 +25,21 @@ func CalculateNamespaceUsedQuota(ctx context.Context, uncachedReader client.Read
 		if claim.Name != suc.Name {
 			totalUsedQuota.MaxObjects.Add(claim.Spec.Quota.MaxObjects)
 			totalUsedQuota.MaxSize.Add(claim.Spec.Quota.MaxSize)
-			totalUsedQuota.MaxBuckets += int64(claim.Spec.Quota.MaxBuckets)
+			totalUsedQuota.MaxBuckets += claim.Spec.Quota.MaxBuckets
 		}
 	}
 	// Don't add the current user quota if the function is called by the cleaner
 	if addCurrentQuota {
 		totalUsedQuota.MaxObjects.Add(suc.Spec.Quota.MaxObjects)
 		totalUsedQuota.MaxSize.Add(suc.Spec.Quota.MaxSize)
-		totalUsedQuota.MaxBuckets += int64(suc.Spec.Quota.MaxBuckets)
+		totalUsedQuota.MaxBuckets += suc.Spec.Quota.MaxBuckets
 	}
 	return &totalUsedQuota, nil
 }
 
 func CalculateClusterUsedQuota(ctx context.Context, runtimeClient client.Client,
-	suc *S3UserClaim, addCurrentQuota bool) (*TotalQuota, string, error) {
-	totalClusterUsedQuota := TotalQuota{}
+	suc *S3UserClaim, addCurrentQuota bool) (*UserQuota, string, error) {
+	totalClusterUsedQuota := UserQuota{}
 	// Find team's clusterResourceQuota
 	team, err := findTeam(ctx, runtimeClient, suc)
 	if err != nil {
@@ -61,7 +61,7 @@ func CalculateClusterUsedQuota(ctx context.Context, runtimeClient client.Client,
 			if claim.Name != suc.Name || claim.Namespace != suc.Namespace {
 				totalClusterUsedQuota.MaxObjects.Add(claim.Spec.Quota.MaxObjects)
 				totalClusterUsedQuota.MaxSize.Add(claim.Spec.Quota.MaxSize)
-				totalClusterUsedQuota.MaxBuckets += int64(claim.Spec.Quota.MaxBuckets)
+				totalClusterUsedQuota.MaxBuckets += claim.Spec.Quota.MaxBuckets
 			}
 		}
 	}
@@ -69,7 +69,7 @@ func CalculateClusterUsedQuota(ctx context.Context, runtimeClient client.Client,
 	if addCurrentQuota {
 		totalClusterUsedQuota.MaxObjects.Add(suc.Spec.Quota.MaxObjects)
 		totalClusterUsedQuota.MaxSize.Add(suc.Spec.Quota.MaxSize)
-		totalClusterUsedQuota.MaxBuckets += int64(suc.Spec.Quota.MaxBuckets)
+		totalClusterUsedQuota.MaxBuckets += suc.Spec.Quota.MaxBuckets
 	}
 	return &totalClusterUsedQuota, team, nil
 }

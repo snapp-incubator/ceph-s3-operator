@@ -58,7 +58,7 @@ func (r *Reconciler) ensureCephUser(ctx context.Context) (*ctrl.Result, error) {
 	desiredUser := admin.User{
 		ID:          r.cephUserFullId,
 		DisplayName: r.cephDisplayName,
-		MaxBuckets:  pointer.Int(r.s3UserClaim.Spec.Quota.MaxBuckets),
+		MaxBuckets:  pointer.Int(int(r.s3UserClaim.Spec.Quota.MaxBuckets)),
 	}
 	logger := r.logger.WithValues("userId", desiredUser.ID)
 

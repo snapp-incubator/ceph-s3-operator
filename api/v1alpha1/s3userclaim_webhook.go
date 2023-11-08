@@ -155,7 +155,7 @@ func validateQuota(suc *S3UserClaim, allErrs field.ErrorList) field.ErrorList {
 }
 
 func validateAgainstNamespaceQuota(ctx context.Context, suc *S3UserClaim) error {
-	totalUsedQuota, err := CalculateNamespaceUsedQuota(ctx, uncachedReader, suc, false)
+	totalUsedQuota, err := CalculateNamespaceUsedQuota(ctx, uncachedReader, suc, true)
 	if err != nil {
 		return fmt.Errorf("failed to calculate namespace used quota , %w", err)
 	}
@@ -187,7 +187,7 @@ func validateAgainstNamespaceQuota(ctx context.Context, suc *S3UserClaim) error 
 }
 
 func validateAgainstClusterQuota(ctx context.Context, suc *S3UserClaim) error {
-	totalClusterUsedQuota, team, err := CalculateClusterUsedQuota(ctx, runtimeClient, suc, false)
+	totalClusterUsedQuota, team, err := CalculateClusterUsedQuota(ctx, runtimeClient, suc, true)
 	if err != nil {
 		return fmt.Errorf("failed to calculate cluster resource used quota , %w", err)
 	}
