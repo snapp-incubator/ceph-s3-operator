@@ -85,7 +85,7 @@ var _ = Describe("S3UserClaim Controller", func() {
 				Quota: &s3v1alpha1.UserQuota{
 					MaxSize:    quotaMaxSize,
 					MaxObjects: quotaMaxObjects,
-					MaxBuckets: quotaMaxBuckets,
+					MaxBuckets: int64(quotaMaxBuckets),
 				},
 			},
 		}

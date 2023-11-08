@@ -1,0 +1,23 @@
+# These access controles are needed for updating the cluster resouce quota
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: clusterresourcequota-updater
+rules:
+- apiGroups: ["quota.openshift.io"] 
+  resources: ["clusterresourcequotas/status"]
+  verbs: ["update", "patch"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: clusterresourcequota-updater-binding
+subjects:
+- kind: ServiceAccount
+  name: controller-manager 
+  namespace: system 
+roleRef:
+  kind: ClusterRole
+  name: clusterresourcequota-updater
+  apiGroup: rbac.authorization.k8s.io

@@ -119,8 +119,6 @@ e2e-test: docker-build # Run e2e tests
 e2e-test-local: docker-build # Run e2e tests for local development purposes
 	kind load docker-image $(IMG)
 	kubectl delete pod -n s3-operator-system -l control-plane=controller-manager
-	kubectl delete s3b --all -A
-	kubectl delete s3u --all -A
 	kubectl kuttl test --start-kind=false
 
 ##@ Build

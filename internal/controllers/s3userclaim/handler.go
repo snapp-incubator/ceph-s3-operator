@@ -39,9 +39,10 @@ import (
 
 type Reconciler struct {
 	client.Client
-	scheme    *runtime.Scheme
-	logger    logr.Logger
-	rgwClient *admin.API
+	uncachedReader client.Reader
+	scheme         *runtime.Scheme
+	logger         logr.Logger
+	rgwClient      *admin.API
 
 	// reconcile specific variables
 	clusterResourceQuota      *openshiftquota.ClusterResourceQuota
@@ -67,9 +68,10 @@ type Reconciler struct {
 
 func NewReconciler(mgr manager.Manager, cfg *config.Config, rgwClient *admin.API) *Reconciler {
 	return &Reconciler{
-		Client:    mgr.GetClient(),
-		scheme:    mgr.GetScheme(),
-		rgwClient: rgwClient,
+		Client:         mgr.GetClient(),
+		uncachedReader: mgr.GetAPIReader(),
+		scheme:         mgr.GetScheme(),
+		rgwClient:      rgwClient,
 
 		s3UserClass:  cfg.S3UserClass,
 		clusterName:  cfg.ClusterName,

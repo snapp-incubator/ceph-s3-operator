@@ -121,6 +121,7 @@ spec:
                 properties:
                   maxBuckets:
                     description: max number of buckets the user can create
+                    format: int64
                     type: integer
                   maxObjects:
                     anyOf:

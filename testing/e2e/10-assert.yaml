@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: example-quota
+  namespace: s3-test
+status:
+  hard:
+    s3/buckets: "15"
+    s3/objects: 1k
+    s3/size: 20k
+  used:
+    s3/buckets: "0"
+    s3/objects: "0"
+    s3/size: "0"
+
+---
+apiVersion: quota.openshift.io/v1
+kind: ClusterResourceQuota
+metadata:
+  name: myteam
+status:
+  total:
+    used:
+      s3/buckets: "0"
+      s3/objects: "0"
+      s3/size: "0"

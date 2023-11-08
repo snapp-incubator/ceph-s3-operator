@@ -9,7 +9,7 @@ type UserQuota struct {
 	// max number of objects the user can store
 	MaxObjects resource.Quantity `json:"maxObjects,omitempty"`
 	// max number of buckets the user can create
-	MaxBuckets int `json:"maxBuckets,omitempty"`
+	MaxBuckets int64 `json:"maxBuckets,omitempty"`
 }
 
 // +kubebuilder:validation:Pattern=^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$
