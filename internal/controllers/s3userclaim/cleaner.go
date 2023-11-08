@@ -18,13 +18,12 @@ import (
 
 // Cleanup cleans up the provisioned resources for the s3UserClaim object
 func (r *Reconciler) Cleanup(ctx context.Context) (ctrl.Result, error) {
-	r.cleanPhase = true
 	// Do the actual reconcile work
 	subrecs := []subreconciler.Fn{
 		r.removeCephUser,
 		r.removeS3User,
-		r.updateNamespaceResourceQuotaStatus,
-		r.updateClusterResourceQuotaStatus,
+		r.updateNamespaceQuotaStatusExclusive,
+		r.updateClusterQuotaStatusExclusive,
 		r.removeCleanupFinalizer,
 	}
 	for _, subrec := range subrecs {

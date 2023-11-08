@@ -12,7 +12,7 @@ import (
 )
 
 func CalculateNamespaceUsedQuota(ctx context.Context, uncachedReader client.Reader,
-	suc *S3UserClaim, cleanPhase bool) (*TotalQuota, error) {
+	suc *S3UserClaim, addCurrentQuota bool) (*TotalQuota, error) {
 	totalUsedQuota := TotalQuota{}
 	// List all s3UserClaims in the namespace
 	s3UserClaimList := &S3UserClaimList{}
@@ -29,7 +29,7 @@ func CalculateNamespaceUsedQuota(ctx context.Context, uncachedReader client.Read
 		}
 	}
 	// Don't add the current user quota if the function is called by the cleaner
-	if !cleanPhase {
+	if addCurrentQuota {
 		totalUsedQuota.MaxObjects.Add(suc.Spec.Quota.MaxObjects)
 		totalUsedQuota.MaxSize.Add(suc.Spec.Quota.MaxSize)
 		totalUsedQuota.MaxBuckets += int64(suc.Spec.Quota.MaxBuckets)
@@ -38,7 +38,7 @@ func CalculateNamespaceUsedQuota(ctx context.Context, uncachedReader client.Read
 }
 
 func CalculateClusterUsedQuota(ctx context.Context, runtimeClient client.Client,
-	suc *S3UserClaim, cleanPhase bool) (*TotalQuota, string, error) {
+	suc *S3UserClaim, addCurrentQuota bool) (*TotalQuota, string, error) {
 	totalClusterUsedQuota := TotalQuota{}
 	// Find team's clusterResourceQuota
 	team, err := findTeam(ctx, runtimeClient, suc)
@@ -66,7 +66,7 @@ func CalculateClusterUsedQuota(ctx context.Context, runtimeClient client.Client,
 		}
 	}
 	// Don't add the current user quota if the function is called by the cleaner
-	if !cleanPhase {
+	if addCurrentQuota {
 		totalClusterUsedQuota.MaxObjects.Add(suc.Spec.Quota.MaxObjects)
 		totalClusterUsedQuota.MaxSize.Add(suc.Spec.Quota.MaxSize)
 		totalClusterUsedQuota.MaxBuckets += int64(suc.Spec.Quota.MaxBuckets)

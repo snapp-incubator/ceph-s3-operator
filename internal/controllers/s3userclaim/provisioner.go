@@ -28,7 +28,6 @@ import (
 
 // Provision provisions the required resources for the s3UserClaim object
 func (r *Reconciler) Provision(ctx context.Context) (ctrl.Result, error) {
-	r.cleanPhase = false
 	// Do the actual reconcile work
 	subrecs := []subreconciler.Fn{
 		r.ensureCephUser,
@@ -41,8 +40,8 @@ func (r *Reconciler) Provision(ctx context.Context) (ctrl.Result, error) {
 		r.ensureOtherSubusersSecret,
 		r.ensureS3User,
 		r.updateS3UserClaimStatus,
-		r.updateNamespaceResourceQuotaStatus,
-		r.updateClusterResourceQuotaStatus,
+		r.updateNamespaceQuotaStatusInclusive,
+		r.updateClusterQuotaStatusInclusive,
 		r.addCleanupFinalizer,
 	}
 	for _, subrec := range subrecs {
@@ -254,10 +253,17 @@ func (r *Reconciler) updateS3UserClaimStatus(ctx context.Context) (*ctrl.Result,
 
 	return subreconciler.ContinueReconciling()
 }
+func (r *Reconciler) updateNamespaceQuotaStatusInclusive(ctx context.Context) (*ctrl.Result, error) {
+	return r.updateNamespaceQuotaStatus(ctx, true)
+}
 
-func (r *Reconciler) updateNamespaceResourceQuotaStatus(ctx context.Context) (*ctrl.Result, error) {
+func (r *Reconciler) updateNamespaceQuotaStatusExclusive(ctx context.Context) (*ctrl.Result, error) {
+	return r.updateNamespaceQuotaStatus(ctx, false)
+}
+
+func (r *Reconciler) updateNamespaceQuotaStatus(ctx context.Context, addCurrentQuota bool) (*ctrl.Result, error) {
 	// sum up all quotas in the namespace
-	totalUsedQuota, err := s3v1alpha1.CalculateNamespaceUsedQuota(ctx, r.uncachedReader, r.s3UserClaim, r.cleanPhase)
+	totalUsedQuota, err := s3v1alpha1.CalculateNamespaceUsedQuota(ctx, r.uncachedReader, r.s3UserClaim, addCurrentQuota)
 	if err != nil {
 		r.logger.Error(err, "failed to calculate namespace used quota")
 		return subreconciler.Requeue()
@@ -292,9 +298,17 @@ func (r *Reconciler) updateNamespaceResourceQuotaStatus(ctx context.Context) (*c
 	return subreconciler.ContinueReconciling()
 }
 
-func (r *Reconciler) updateClusterResourceQuotaStatus(ctx context.Context) (*ctrl.Result, error) {
+func (r *Reconciler) updateClusterQuotaStatusInclusive(ctx context.Context) (*ctrl.Result, error) {
+	return r.updateClusterQuotaStatus(ctx, true)
+}
+
+func (r *Reconciler) updateClusterQuotaStatusExclusive(ctx context.Context) (*ctrl.Result, error) {
+	return r.updateClusterQuotaStatus(ctx, false)
+}
+
+func (r *Reconciler) updateClusterQuotaStatus(ctx context.Context, addCurrentQuota bool) (*ctrl.Result, error) {
 	// sum up all quotas in the cluster related to the team label
-	totalClusterUsedQuota, team, err := s3v1alpha1.CalculateClusterUsedQuota(ctx, r.Client, r.s3UserClaim, r.cleanPhase)
+	totalClusterUsedQuota, team, err := s3v1alpha1.CalculateClusterUsedQuota(ctx, r.Client, r.s3UserClaim, addCurrentQuota)
 	if err != nil {
 		r.logger.Error(err, "failed to calculate cluster used quota")
 		return subreconciler.Requeue()
