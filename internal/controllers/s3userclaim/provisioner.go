@@ -317,10 +317,10 @@ func (r *Reconciler) updateClusterQuotaStatus(ctx context.Context, addCurrentQuo
 	clusterQuota := &openshiftquota.ClusterResourceQuota{}
 	if err := r.Get(ctx, types.NamespacedName{Name: team}, clusterQuota); err != nil {
 		if apierrors.IsNotFound(err) {
-			r.logger.Error(err, "%w, team=%s", consts.ErrClusterQuotaNotDefined, team)
+			r.logger.Error(err, consts.ErrClusterQuotaNotDefined.Error(), "team", team)
 			return subreconciler.Requeue()
 		}
-		r.logger.Error(err, "failed to get clusterQuota, %w", err)
+		r.logger.Error(err, "failed to get clusterQuota")
 		return subreconciler.Requeue()
 	}
 
