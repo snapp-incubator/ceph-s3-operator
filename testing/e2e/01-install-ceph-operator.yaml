@@ -5,6 +5,8 @@ commands:
   - command: kubectl apply -f ../../config/external-crd
   - command: kubectl create namespace s3-test
     ignoreFailure: true
+  - command: kubectl create namespace s3-test2
+    ignoreFailure: true
   # Create namespace s3-operator-system
   - command: kubectl create namespace s3-operator-system
     ignoreFailure: true
@@ -14,3 +16,4 @@ commands:
   - command: make -C ../../ deploy-for-e2e-test IMG=s3-operator:latest
   # The namespace should have the team label for the cluster resource quota
   - command: kubectl label namespace s3-test snappcloud.io/team=myteam
+  - command: kubectl label namespace s3-test2 snappcloud.io/team=myteam
