@@ -331,7 +331,7 @@ func (r *Reconciler) updateClusterQuotaStatus(ctx context.Context, addCurrentQuo
 	assignUsedQuotaToResourceStatus(&status.Total, totalClusterUsedQuota)
 
 	// update namespace field of the status
-	status.Namespaces = r.assignNamespaceQuotatoResourceStatus(status.Namespaces)
+	status.Namespaces = r.assignNamespaceQuotaToResourceStatus(status.Namespaces)
 
 	if !apiequality.Semantic.DeepEqual(clusterQuota.Status, *status) {
 		clusterQuota.Status = *status
@@ -348,7 +348,7 @@ func (r *Reconciler) updateClusterQuotaStatus(ctx context.Context, addCurrentQuo
 	return subreconciler.ContinueReconciling()
 }
 
-func (r *Reconciler) assignNamespaceQuotatoResourceStatus(statusNamespaces openshiftquota.ResourceQuotasStatusByNamespace) openshiftquota.ResourceQuotasStatusByNamespace {
+func (r *Reconciler) assignNamespaceQuotaToResourceStatus(statusNamespaces openshiftquota.ResourceQuotasStatusByNamespace) openshiftquota.ResourceQuotasStatusByNamespace {
 	if r.namespaceUsedQuota == nil {
 		r.logger.Info("Warning: unable to find the namespace used quota while updating the cluster resource quota",
 			"namespace", r.s3UserClaimNamespace)
