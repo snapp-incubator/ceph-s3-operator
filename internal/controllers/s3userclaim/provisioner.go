@@ -262,8 +262,9 @@ func (r *Reconciler) updateNamespaceQuotaStatusExclusive(ctx context.Context) (*
 }
 
 func (r *Reconciler) updateNamespaceQuotaStatus(ctx context.Context, addCurrentQuota bool) (*ctrl.Result, error) {
+	var err error
 	// sum up all quotas in the namespace
-	totalUsedQuota, err := s3v1alpha1.CalculateNamespaceUsedQuota(ctx, r.uncachedReader, r.s3UserClaim, addCurrentQuota)
+	r.namespaceUsedQuota, err = s3v1alpha1.CalculateNamespaceUsedQuota(ctx, r.uncachedReader, r.s3UserClaim, addCurrentQuota)
 	if err != nil {
 		r.logger.Error(err, "failed to calculate namespace used quota")
 		return subreconciler.Requeue()
@@ -280,9 +281,8 @@ func (r *Reconciler) updateNamespaceQuotaStatus(ctx context.Context, addCurrentQ
 		if status.Used == nil {
 			status.Used = corev1.ResourceList{}
 		}
-		status.Used[consts.ResourceNameS3MaxObjects] = totalUsedQuota.MaxObjects
-		status.Used[consts.ResourceNameS3MaxSize] = totalUsedQuota.MaxSize
-		status.Used[consts.ResourceNameS3MaxBuckets] = *resource.NewQuantity(totalUsedQuota.MaxBuckets, resource.DecimalSI)
+		assignUsedQuotaToResourceStatus(status, r.namespaceUsedQuota)
+
 		if !apiequality.Semantic.DeepEqual(quota.Status, *status) {
 			quota.Status = *status
 			if err := r.Status().Update(ctx, &quota); err != nil {
@@ -323,14 +323,16 @@ func (r *Reconciler) updateClusterQuotaStatus(ctx context.Context, addCurrentQuo
 		r.logger.Error(err, "failed to get clusterQuota")
 		return subreconciler.Requeue()
 	}
-
 	status := clusterQuota.Status.DeepCopy()
 	if status.Total.Used == nil {
 		status.Total.Used = corev1.ResourceList{}
 	}
-	status.Total.Used[consts.ResourceNameS3MaxObjects] = totalClusterUsedQuota.MaxObjects
-	status.Total.Used[consts.ResourceNameS3MaxSize] = totalClusterUsedQuota.MaxSize
-	status.Total.Used[consts.ResourceNameS3MaxBuckets] = *resource.NewQuantity(totalClusterUsedQuota.MaxBuckets, resource.DecimalSI)
+	// update total field of the status
+	assignUsedQuotaToResourceStatus(&status.Total, totalClusterUsedQuota)
+
+	// update namespace field of the status
+	status.Namespaces = r.assignNamespaceQuotaToResourceStatus(status.Namespaces)
+
 	if !apiequality.Semantic.DeepEqual(clusterQuota.Status, *status) {
 		clusterQuota.Status = *status
 		if err := r.Status().Update(ctx, clusterQuota); err != nil {
@@ -345,6 +347,38 @@ func (r *Reconciler) updateClusterQuotaStatus(ctx context.Context, addCurrentQuo
 
 	return subreconciler.ContinueReconciling()
 }
+
+func (r *Reconciler) assignNamespaceQuotaToResourceStatus(statusNamespaces openshiftquota.ResourceQuotasStatusByNamespace) openshiftquota.ResourceQuotasStatusByNamespace {
+	if r.namespaceUsedQuota == nil {
+		r.logger.Info("Warning: unable to find the namespace used quota while updating the cluster resource quota",
+			"namespace", r.s3UserClaimNamespace)
+		r.namespaceUsedQuota = &s3v1alpha1.UserQuota{}
+	}
+	// update the namespace status in cluster resource quota if it's there
+	for i, namespaceQuota := range statusNamespaces {
+		if namespaceQuota.Namespace == r.s3UserClaimNamespace {
+			assignUsedQuotaToResourceStatus(&statusNamespaces[i].Status, r.namespaceUsedQuota)
+			return statusNamespaces
+		}
+	}
+	// create a new item for the current namespace if it's not already there
+	namepaceQuotaStatus := corev1.ResourceQuotaStatus{}
+	assignUsedQuotaToResourceStatus(&namepaceQuotaStatus, r.namespaceUsedQuota)
+	namespaceQuota := openshiftquota.ResourceQuotaStatusByNamespace{Namespace: r.s3UserClaimNamespace,
+		Status: namepaceQuotaStatus}
+	statusNamespaces = append(statusNamespaces, namespaceQuota)
+	return statusNamespaces
+}
+
+func assignUsedQuotaToResourceStatus(resourceQuotaStatus *corev1.ResourceQuotaStatus, usedQuota *s3v1alpha1.UserQuota) {
+	if resourceQuotaStatus.Used == nil {
+		resourceQuotaStatus.Used = corev1.ResourceList{}
+	}
+	resourceQuotaStatus.Used[consts.ResourceNameS3MaxObjects] = usedQuota.MaxObjects
+	resourceQuotaStatus.Used[consts.ResourceNameS3MaxSize] = usedQuota.MaxSize
+	resourceQuotaStatus.Used[consts.ResourceNameS3MaxBuckets] = *resource.NewQuantity(usedQuota.MaxBuckets, resource.DecimalSI)
+}
+
 func (r *Reconciler) addCleanupFinalizer(ctx context.Context) (*ctrl.Result, error) {
 	if objUpdated := controllerutil.AddFinalizer(r.s3UserClaim, consts.S3UserClaimCleanupFinalizer); objUpdated {
 		if err := r.Update(ctx, r.s3UserClaim); err != nil {

@@ -62,7 +62,7 @@ apiVersion: s3.snappcloud.io/v1alpha1
 kind: S3UserClaim
 metadata:
   name: s3userclaim-extra
-  namespace: s3-test
+  namespace: s3-test2
 status:
   quota:
     maxSize: 5k
@@ -74,7 +74,7 @@ status:
 apiVersion: s3.snappcloud.io/v1alpha1
 kind: S3User
 metadata:
-  name: s3-test.s3userclaim-extra
+  name: s3-test2.s3userclaim-extra
 spec:
   quota:
     maxSize: 5k
@@ -84,14 +84,14 @@ spec:
     apiVersion: s3.snappcloud.io/v1alpha1
     kind: S3UserClaim
     name: s3userclaim-extra
-    namespace: s3-test
+    namespace: s3-test2
 
 ---
 apiVersion: v1
 kind: Secret
 metadata:
   name: s3-extra-admin-secret
-  namespace: s3-test
+  namespace: s3-test2
   ownerReferences:
   - apiVersion: s3.snappcloud.io/v1alpha1
     blockOwnerDeletion: true
@@ -105,7 +105,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: s3-extra-readonly-secret
-  namespace: s3-test
+  namespace: s3-test2
   ownerReferences:
   - apiVersion: s3.snappcloud.io/v1alpha1
     blockOwnerDeletion: true
@@ -126,9 +126,9 @@ status:
     s3/objects: 1k
     s3/size: 20k
   used:
-    s3/buckets: "10"
-    s3/objects: 1k
-    s3/size: 15k
+    s3/buckets: "5"
+    s3/objects: "500"
+    s3/size: 10k
 
 ---
 apiVersion: quota.openshift.io/v1
@@ -141,3 +141,17 @@ status:
       s3/buckets: "10"
       s3/objects: 1k
       s3/size: 15k
+  namespaces:
+    - namespace: s3-test
+      status:
+        used:
+          s3/buckets: "5"
+          s3/objects: "500"
+          s3/size: 10k
+    - namespace: s3-test2
+      status:
+        used:
+          s3/buckets: "5"
+          s3/objects: "500"
+          s3/size: 5k
+

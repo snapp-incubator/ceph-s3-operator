@@ -57,7 +57,7 @@ type Reconciler struct {
 	readonlyCephUserId        string
 	readonlyCephUserFullId    string
 	desiredSubusersStringList []string
-
+	namespaceUsedQuota        *s3v1alpha1.UserQuota
 	// configurations
 	clusterName  string
 	rgwAccessKey string
