@@ -23,7 +23,6 @@ const (
 	ErrExceededClusterQuota        = CustomError("exceeded cluster quota")
 	ErrExceededNamespaceQuota      = CustomError("exceeded namespace quota")
 	ErrClusterQuotaNotDefined      = CustomError("cluster quota is not defined")
-	ErrNamespaceQuotaNotDefined    = CustomError("namespace quota is not defined")
 	S3UserClassImmutableErrMessage = "s3UserClass is immutable"
 	S3UserRefImmutableErrMessage   = "s3UserRef is immutable"
 	S3UserRefNotFoundErrMessage    = "There is no s3UserClaim regarding the defined s3UserRef"

@@ -350,8 +350,8 @@ func (r *Reconciler) updateClusterQuotaStatus(ctx context.Context, addCurrentQuo
 
 func (r *Reconciler) assignNamespaceQuotatoResourceStatus(statusNamespaces openshiftquota.ResourceQuotasStatusByNamespace) openshiftquota.ResourceQuotasStatusByNamespace {
 	if r.namespaceUsedQuota == nil {
-		r.logger.Error(consts.ErrNamespaceQuotaNotDefined,
-			"unable to update namespace status of cluster resource quota", "namespace", r.s3UserClaimNamespace)
+		r.logger.Info("Warning: unable to find the namespace used quota while updating the cluster resource quota",
+			"namespace", r.s3UserClaimNamespace)
 		r.namespaceUsedQuota = &s3v1alpha1.UserQuota{}
 	}
 	// update the namespace status in cluster resource quota if it's there
