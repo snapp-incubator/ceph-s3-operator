@@ -4,7 +4,6 @@ import (
 	"context"
 	goerrors "errors"
 	"fmt"
-	"strings"
 
 	"github.com/ceph/go-ceph/rgw/admin"
 	"github.com/opdev/subreconciler"
@@ -15,8 +14,8 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
-	genericregistry "k8s.io/apiserver/pkg/registry/generic/registry"
 	"k8s.io/client-go/tools/reference"
+	"k8s.io/client-go/util/retry"
 	"k8s.io/utils/pointer"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -241,12 +240,10 @@ func (r *Reconciler) updateS3UserClaimStatus(ctx context.Context) (*ctrl.Result,
 
 	if !apiequality.Semantic.DeepEqual(r.s3UserClaim.Status, status) {
 		r.s3UserClaim.Status = status
-		if err := r.Status().Update(ctx, r.s3UserClaim); err != nil {
-			if strings.Contains(err.Error(), genericregistry.OptimisticLockErrorMsg) {
-				r.logger.Info("re-queuing item due to optimistic locking on resource", "error", err.Error())
-			} else {
-				r.logger.Error(err, "failed to update s3 user claim")
-			}
+		if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+			return r.Status().Update(ctx, r.s3UserClaim)
+		}); err != nil {
+			r.logger.Error(err, "failed to update s3 user claim")
 			return subreconciler.Requeue()
 		}
 	}
@@ -285,12 +282,10 @@ func (r *Reconciler) updateNamespaceQuotaStatus(ctx context.Context, addCurrentQ
 
 		if !apiequality.Semantic.DeepEqual(quota.Status, *status) {
 			quota.Status = *status
-			if err := r.Status().Update(ctx, &quota); err != nil {
-				if strings.Contains(err.Error(), genericregistry.OptimisticLockErrorMsg) {
-					r.logger.Info("re-queuing item due to optimistic locking on resource", "error", err.Error())
-				} else {
-					r.logger.Error(err, "failed to update namespace quota status")
-				}
+			if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+				return r.Status().Update(ctx, &quota)
+			}); err != nil {
+				r.logger.Error(err, "failed to update namespace quota status")
 				return subreconciler.Requeue()
 			}
 		}
@@ -335,12 +330,10 @@ func (r *Reconciler) updateClusterQuotaStatus(ctx context.Context, addCurrentQuo
 
 	if !apiequality.Semantic.DeepEqual(clusterQuota.Status, *status) {
 		clusterQuota.Status = *status
-		if err := r.Status().Update(ctx, clusterQuota); err != nil {
-			if strings.Contains(err.Error(), genericregistry.OptimisticLockErrorMsg) {
-				r.logger.Info("re-queuing item due to optimistic locking on resource", "error", err.Error())
-			} else {
-				r.logger.Error(err, "failed to update cluster resource quota status")
-			}
+		if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+			return r.Status().Update(ctx, clusterQuota)
+		}); err != nil {
+			r.logger.Error(err, "failed to update cluster resource quota status")
 			return subreconciler.Requeue()
 		}
 	}
