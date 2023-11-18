@@ -12,11 +12,14 @@ import (
 )
 
 func CalculateNamespaceUsedQuota(ctx context.Context, uncachedReader client.Reader,
-	suc *S3UserClaim, addCurrentQuota bool) (*UserQuota, error) {
+	suc *S3UserClaim, namespace string, addCurrentQuota bool) (*UserQuota, error) {
 	totalUsedQuota := UserQuota{}
+	if suc == nil {
+		return &totalUsedQuota, fmt.Errorf("s3userclaim pointer is nil")
+	}
 	// List all s3UserClaims in the namespace
 	s3UserClaimList := &S3UserClaimList{}
-	if err := uncachedReader.List(ctx, s3UserClaimList, client.InNamespace(suc.Namespace)); err != nil {
+	if err := uncachedReader.List(ctx, s3UserClaimList, client.InNamespace(namespace)); err != nil {
 		return &totalUsedQuota, fmt.Errorf("failed to list s3 user claims, %w", err)
 	}
 

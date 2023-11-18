@@ -23,7 +23,6 @@ func (r *Reconciler) Cleanup(ctx context.Context) (ctrl.Result, error) {
 		r.removeCephUser,
 		r.removeS3User,
 		r.updateNamespaceQuotaStatusExclusive,
-		r.updateClusterQuotaStatusExclusive,
 		r.removeCleanupFinalizer,
 	}
 	for _, subrec := range subrecs {
