@@ -7,7 +7,6 @@ import (
 
 	"github.com/ceph/go-ceph/rgw/admin"
 	"github.com/opdev/subreconciler"
-	openshiftquota "github.com/openshift/api/quota/v1"
 	corev1 "k8s.io/api/core/v1"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -40,7 +39,6 @@ func (r *Reconciler) Provision(ctx context.Context) (ctrl.Result, error) {
 		r.ensureS3User,
 		r.updateS3UserClaimStatus,
 		r.updateNamespaceQuotaStatusInclusive,
-		r.updateClusterQuotaStatusInclusive,
 		r.addCleanupFinalizer,
 	}
 	for _, subrec := range subrecs {
@@ -261,7 +259,7 @@ func (r *Reconciler) updateNamespaceQuotaStatusExclusive(ctx context.Context) (*
 func (r *Reconciler) updateNamespaceQuotaStatus(ctx context.Context, addCurrentQuota bool) (*ctrl.Result, error) {
 	var err error
 	// sum up all quotas in the namespace
-	r.namespaceUsedQuota, err = s3v1alpha1.CalculateNamespaceUsedQuota(ctx, r.uncachedReader, r.s3UserClaim, addCurrentQuota)
+	r.namespaceUsedQuota, err = s3v1alpha1.CalculateNamespaceUsedQuota(ctx, r.uncachedReader, r.s3UserClaim, r.s3UserClaimNamespace, addCurrentQuota)
 	if err != nil {
 		r.logger.Error(err, "failed to calculate namespace used quota")
 		return subreconciler.Requeue()
@@ -291,76 +289,6 @@ func (r *Reconciler) updateNamespaceQuotaStatus(ctx context.Context, addCurrentQ
 		}
 	}
 	return subreconciler.ContinueReconciling()
-}
-
-func (r *Reconciler) updateClusterQuotaStatusInclusive(ctx context.Context) (*ctrl.Result, error) {
-	return r.updateClusterQuotaStatus(ctx, true)
-}
-
-func (r *Reconciler) updateClusterQuotaStatusExclusive(ctx context.Context) (*ctrl.Result, error) {
-	return r.updateClusterQuotaStatus(ctx, false)
-}
-
-func (r *Reconciler) updateClusterQuotaStatus(ctx context.Context, addCurrentQuota bool) (*ctrl.Result, error) {
-	// sum up all quotas in the cluster related to the team label
-	totalClusterUsedQuota, team, err := s3v1alpha1.CalculateClusterUsedQuota(ctx, r.Client, r.s3UserClaim, addCurrentQuota)
-	if err != nil {
-		r.logger.Error(err, "failed to calculate cluster used quota")
-		return subreconciler.Requeue()
-	}
-	// update the cluster resource quota status
-	clusterQuota := &openshiftquota.ClusterResourceQuota{}
-	if err := r.Get(ctx, types.NamespacedName{Name: team}, clusterQuota); err != nil {
-		if apierrors.IsNotFound(err) {
-			r.logger.Error(err, consts.ErrClusterQuotaNotDefined.Error(), "team", team)
-			return subreconciler.Requeue()
-		}
-		r.logger.Error(err, "failed to get clusterQuota")
-		return subreconciler.Requeue()
-	}
-	status := clusterQuota.Status.DeepCopy()
-	if status.Total.Used == nil {
-		status.Total.Used = corev1.ResourceList{}
-	}
-	// update total field of the status
-	assignUsedQuotaToResourceStatus(&status.Total, totalClusterUsedQuota)
-
-	// update namespace field of the status
-	status.Namespaces = r.assignNamespaceQuotaToResourceStatus(status.Namespaces)
-
-	if !apiequality.Semantic.DeepEqual(clusterQuota.Status, *status) {
-		clusterQuota.Status = *status
-		if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
-			return r.Status().Update(ctx, clusterQuota)
-		}); err != nil {
-			r.logger.Error(err, "failed to update cluster resource quota status")
-			return subreconciler.Requeue()
-		}
-	}
-
-	return subreconciler.ContinueReconciling()
-}
-
-func (r *Reconciler) assignNamespaceQuotaToResourceStatus(statusNamespaces openshiftquota.ResourceQuotasStatusByNamespace) openshiftquota.ResourceQuotasStatusByNamespace {
-	if r.namespaceUsedQuota == nil {
-		r.logger.Info("Warning: unable to find the namespace used quota while updating the cluster resource quota",
-			"namespace", r.s3UserClaimNamespace)
-		r.namespaceUsedQuota = &s3v1alpha1.UserQuota{}
-	}
-	// update the namespace status in cluster resource quota if it's there
-	for i, namespaceQuota := range statusNamespaces {
-		if namespaceQuota.Namespace == r.s3UserClaimNamespace {
-			assignUsedQuotaToResourceStatus(&statusNamespaces[i].Status, r.namespaceUsedQuota)
-			return statusNamespaces
-		}
-	}
-	// create a new item for the current namespace if it's not already there
-	namepaceQuotaStatus := corev1.ResourceQuotaStatus{}
-	assignUsedQuotaToResourceStatus(&namepaceQuotaStatus, r.namespaceUsedQuota)
-	namespaceQuota := openshiftquota.ResourceQuotaStatusByNamespace{Namespace: r.s3UserClaimNamespace,
-		Status: namepaceQuotaStatus}
-	statusNamespaces = append(statusNamespaces, namespaceQuota)
-	return statusNamespaces
 }
 
 func assignUsedQuotaToResourceStatus(resourceQuotaStatus *corev1.ResourceQuotaStatus, usedQuota *s3v1alpha1.UserQuota) {

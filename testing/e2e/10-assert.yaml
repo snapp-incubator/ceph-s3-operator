@@ -12,28 +12,3 @@ status:
     s3/buckets: "0"
     s3/objects: "0"
     s3/size: "0"
-
----
-apiVersion: quota.openshift.io/v1
-kind: ClusterResourceQuota
-metadata:
-  name: myteam
-status:
-  namespaces:
-  - namespace: s3-test
-    status:
-      used:
-        s3/buckets: "0"
-        s3/objects: "0"
-        s3/size: "0"
-  - namespace: s3-test2
-    status:
-      used:
-        s3/buckets: "0"
-        s3/objects: "0"
-        s3/size: "0"
-  total:
-    used:
-      s3/buckets: "0"
-      s3/objects: "0"
-      s3/size: "0"

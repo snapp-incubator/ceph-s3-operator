@@ -155,7 +155,7 @@ func validateQuota(suc *S3UserClaim, allErrs field.ErrorList) field.ErrorList {
 }
 
 func validateAgainstNamespaceQuota(ctx context.Context, suc *S3UserClaim) error {
-	totalUsedQuota, err := CalculateNamespaceUsedQuota(ctx, uncachedReader, suc, true)
+	totalUsedQuota, err := CalculateNamespaceUsedQuota(ctx, uncachedReader, suc, suc.Namespace, true)
 	if err != nil {
 		return fmt.Errorf("failed to calculate namespace used quota , %w", err)
 	}
