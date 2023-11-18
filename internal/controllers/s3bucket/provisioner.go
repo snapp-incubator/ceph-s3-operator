@@ -2,12 +2,10 @@ package s3bucket
 
 import (
 	"context"
-	"strings"
-
-	genericregistry "k8s.io/apiserver/pkg/registry/generic/registry"
 
 	"github.com/opdev/subreconciler"
 	apiequality "k8s.io/apimachinery/pkg/api/equality"
+	"k8s.io/client-go/util/retry"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
@@ -67,12 +65,10 @@ func (r *Reconciler) updateBucketStatus(ctx context.Context,
 
 	if !apiequality.Semantic.DeepEqual(r.s3Bucket.Status, status) {
 		r.s3Bucket.Status = status
-		if err := r.Status().Update(ctx, r.s3Bucket); err != nil {
-			if strings.Contains(err.Error(), genericregistry.OptimisticLockErrorMsg) {
-				r.logger.Info("re-queuing item due to optimistic locking on resource", "error", err.Error())
-			} else {
-				r.logger.Error(err, "failed to update s3 bucket")
-			}
+		if err := retry.RetryOnConflict(retry.DefaultRetry, func() error {
+			return r.Status().Update(ctx, r.s3Bucket)
+		}); err != nil {
+			r.logger.Error(err, "failed to update s3 bucket")
 			return subreconciler.Requeue()
 		}
 	}
