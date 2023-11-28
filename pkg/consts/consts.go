@@ -25,8 +25,9 @@ const (
 	ErrClusterQuotaNotDefined      = CustomError("cluster quota is not defined")
 	S3UserClassImmutableErrMessage = "s3UserClass is immutable"
 	S3UserRefImmutableErrMessage   = "s3UserRef is immutable"
-	S3UserRefNotFoundErrMessage    = "There is no s3UserClaim regarding the defined s3UserRef"
+	S3UserRefNotFoundErrMessage    = "there is no s3UserClaim regarding the defined s3UserRef"
 	ContactCloudTeamErrMessage     = "please contact the cloud team"
+	SecretExistsErrMessage         = "the secret exists"
 
 	FinalizerPrefix             = "s3.snappcloud.io/"
 	S3UserClaimCleanupFinalizer = FinalizerPrefix + "cleanup-s3userclaim"

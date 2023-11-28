@@ -71,6 +71,9 @@ func (suc *S3UserClaim) ValidateCreate() error {
 
 	allErrs = validateQuota(suc, allErrs)
 
+	secretNames := []string{suc.Spec.AdminSecret, suc.Spec.ReadonlySecret}
+	allErrs = validateSecrets(secretNames, suc.Namespace, allErrs)
+
 	if len(allErrs) == 0 {
 		return nil
 	}
@@ -96,6 +99,17 @@ func (suc *S3UserClaim) ValidateUpdate(old runtime.Object) error {
 	}
 
 	allErrs = validateQuota(suc, allErrs)
+
+	// validate against updated secret names
+	var secretNames []string
+	if oldS3UserClaim.Spec.AdminSecret != suc.Spec.AdminSecret {
+		secretNames = append(secretNames, suc.Spec.AdminSecret)
+	}
+	if oldS3UserClaim.Spec.ReadonlySecret != suc.Spec.ReadonlySecret {
+		secretNames = append(secretNames, suc.Spec.ReadonlySecret)
+	}
+
+	allErrs = validateSecrets(secretNames, suc.Namespace, allErrs)
 
 	if len(allErrs) == 0 {
 		return nil
@@ -223,4 +237,25 @@ func validateAgainstClusterQuota(ctx context.Context, suc *S3UserClaim) error {
 	}
 
 	return nil
+}
+
+func validateSecrets(secretNames []string, namespace string, allErrs field.ErrorList) field.ErrorList {
+	ctx, cancel := context.WithTimeout(context.Background(), ValidationTimeout)
+	defer cancel()
+	for _, secretName := range secretNames {
+		existingSecret := &v1.Secret{}
+		switch err := runtimeClient.Get(ctx, types.NamespacedName{Namespace: namespace, Name: secretName}, existingSecret); {
+		case apierrors.IsNotFound(err):
+			continue
+		case err != nil:
+			allErrs = append(allErrs, field.InternalError(field.NewPath("spec").Child(secretName), err))
+			continue
+		default:
+			allErrs = append(allErrs,
+				field.Forbidden(field.NewPath("spec").Child(secretName), consts.SecretExistsErrMessage))
+			continue
+		}
+	}
+	return allErrs
+
 }
