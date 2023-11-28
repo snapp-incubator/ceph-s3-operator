@@ -5,6 +5,10 @@ commands:
     ignoreFailure: true
   - command: kubectl apply -f s3bucket-wrong-s3userref.yaml
     ignoreFailure: true
+  - command: kubectl apply -f create-s3user-with-existing-secret.yaml
+    ignoreFailure: true
+  - command: kubectl apply -f update-s3user-with-existing-secret.yaml
+    ignoreFailure: true
   - command: kubectl delete s3userclaim s3userclaim-sample -n s3-test
     ignoreFailure: true
 assert:
@@ -12,3 +16,4 @@ assert:
   - 02-assert.yaml
 error:
   - s3bucket-wrong-s3userref.yaml
+  - create-s3user-with-existing-secret.yaml
