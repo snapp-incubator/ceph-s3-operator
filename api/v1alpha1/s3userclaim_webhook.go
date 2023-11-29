@@ -248,12 +248,11 @@ func validateSecrets(secretNames []string, namespace string, allErrs field.Error
 		case apierrors.IsNotFound(err):
 			continue
 		case err != nil:
-			allErrs = append(allErrs, field.InternalError(field.NewPath("spec").Child(secretName), err))
-			continue
+			allErrs = append(allErrs,
+				field.InternalError(field.NewPath("spec"), fmt.Errorf("error with getting secret '%s': %w", secretName, err)))
 		default:
 			allErrs = append(allErrs,
-				field.Forbidden(field.NewPath("spec").Child(secretName), consts.SecretExistsErrMessage))
-			continue
+				field.Forbidden(field.NewPath("spec"), fmt.Sprintf("secret %s exists", secretName)))
 		}
 	}
 	return allErrs
