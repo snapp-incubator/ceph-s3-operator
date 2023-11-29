@@ -327,7 +327,8 @@ func (r *Reconciler) ensureSecret(ctx context.Context, secret *corev1.Secret) (*
 			!metav1.IsControlledBy(existingSecret, r.s3UserClaim) {
 			existingSecret.Data = secret.Data
 			if err := ctrl.SetControllerReference(r.s3UserClaim, existingSecret, r.scheme); err != nil {
-				return nil, err
+				r.logger.Error(err, "failed to set controller reference", "secret name", secret.Name)
+				return subreconciler.Requeue()
 			}
 			if err := r.Update(ctx, existingSecret); err != nil {
 				r.logger.Error(err, "failed to update secret", "name", secret.Name)
