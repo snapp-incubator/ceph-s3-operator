@@ -3,10 +3,3 @@ resources:
 - secret.yaml
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-images:
-- name: controller
-  newName: controller
-  newTag: latest
-- name: ghcr.io/snapp-incubator/s3-operator
-  newName: s3-operator
-  newTag: latest

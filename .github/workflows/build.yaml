@@ -6,8 +6,8 @@ on:
       - 'v*'
 
 jobs:
-  docker:
-    name: docker
+  build-push-docker:
+    name: build-docker
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -33,9 +33,15 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
+  build-push-bundle:
+    name: build-push-bundle
+    runs-on: ubuntu-latest
+    env:
+      OPERATOR_SDK_VERSION: v1.31.0
+    steps:
       - name: Install operator-sdk
         run: |
-          curl -L https://github.com/operator-framework/operator-sdk/releases/download/v1.31.0/operator-sdk_linux_amd64 -o /usr/local/bin/operator-sdk
+          curl -L https://github.com/operator-framework/operator-sdk/releases/download/${OPERATOR_SDK_VERSION}/operator-sdk_linux_amd64 -o /usr/local/bin/operator-sdk
           chmod +x /usr/local/bin/operator-sdk
 
       - name: Build and push the bundle
