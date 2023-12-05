@@ -1,4 +1,4 @@
-name: Build Container Image
+name: Build and Release
 
 on:
   push:
@@ -52,8 +52,24 @@ jobs:
           VERSION="${TAG_VERSION#v}"
           make bundle bundle-build bundle-push IMAGE_TAG_BASE=ghcr.io/${{ github.repository }} VERSION=$VERSION IMG=ghcr.io/${{ github.repository }}:$TAG_VERSION
 
+  helm-chart:
+    name: helm-chart
+    needs: build-push-docker
+    runs-on: ubuntu-latest
+    steps:
+      - name: Chart | Push
+        uses: appany/helm-oci-chart-releaser@v0.3.0
+        with:
+          name: s3-operator
+          repository: helm-charts/s3-operator
+          tag: ${{ github.ref_name }}
+          path: charts/s3-operator # Default charts/{name}
+          registry: ghcr.io
+          registry_username:  ${{ github.repository_owner }}
+          registry_password: ${{ secrets.GITHUB_TOKEN }}
+
   release:
-    needs: build-push-bundle
+    needs: build-push-docker
     name: release
     runs-on: ubuntu-latest
     steps:
