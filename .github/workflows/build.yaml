@@ -34,6 +34,7 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
 
   build-push-bundle:
+    needs: build-push-docker
     name: build-push-bundle
     runs-on: ubuntu-latest
     env:
@@ -50,3 +51,11 @@ jobs:
           # remove "v" character at the first of the version.
           VERSION="${TAG_VERSION#v}"
           make bundle bundle-build bundle-push IMAGE_TAG_BASE=ghcr.io/${{ github.repository }} VERSION=$VERSION IMG=ghcr.io/${{ github.repository }}:$TAG_VERSION
+
+  release:
+    needs: build-push-bundle
+    name: release
+    runs-on: ubuntu-latest
+    steps:
+      - name: release
+        run: gh release create ${{ github.ref_name }} --generate-notes --verify-tag
