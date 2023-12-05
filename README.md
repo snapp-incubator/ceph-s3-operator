@@ -1,5 +1,10 @@
 # S3 Operator
 
+![License](https://img.shields.io/github/license/snapp-incubator/s3-operator)
+![Test](https://github.com/snapp-incubator/s3-operator/actions/workflows/checks.yaml/badge.svg?branch=main)
+![Release](https://github.com/snapp-incubator/s3-operator/actions/workflows/build.yaml/badge.svg)
+![Tag](https://img.shields.io/github/v/tag/snapp-incubator/s3-operator?&logo=git)
+
 ## Introduction
 
 The S3 Operator, an open-source endeavor, is crafted to streamline the management of S3 users and buckets within a Ceph cluster environment. It enhances efficiency and simplifies processes, rendering S3 usage on Ceph clusters more straightforward and user-friendly.
