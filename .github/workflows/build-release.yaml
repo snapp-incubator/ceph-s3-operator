@@ -57,6 +57,8 @@ jobs:
     needs: build-push-docker
     runs-on: ubuntu-latest
     steps:
+      - name: helmify
+        run: make helm
       - name: Chart | Push
         uses: appany/helm-oci-chart-releaser@v0.3.0
         with:
