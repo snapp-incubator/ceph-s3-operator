@@ -6,9 +6,11 @@ on:
       - 'v*'
 
 jobs:
-  build-push-docker:
-    name: build-docker
+  build-push-operator:
+    name: build-push-operator
     runs-on: ubuntu-latest
+    env:
+      OPERATOR_SDK_VERSION: v1.31.0
     steps:
       - uses: actions/checkout@v3
       - uses: docker/setup-qemu-action@v2
@@ -33,13 +35,6 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
-  build-push-bundle:
-    needs: build-push-docker
-    name: build-push-bundle
-    runs-on: ubuntu-latest
-    env:
-      OPERATOR_SDK_VERSION: v1.31.0
-    steps:
       - name: Install operator-sdk
         run: |
           curl -L https://github.com/operator-framework/operator-sdk/releases/download/${OPERATOR_SDK_VERSION}/operator-sdk_linux_amd64 -o /usr/local/bin/operator-sdk
@@ -54,16 +49,17 @@ jobs:
 
   helm-chart:
     name: helm-chart
-    needs: build-push-docker
+    needs: build-push-operator
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v3
       - name: helmify
         run: make helm
       - name: Chart | Push
         uses: appany/helm-oci-chart-releaser@v0.3.0
         with:
           name: s3-operator
-          repository: helm-charts/s3-operator
+          repository: ${{ github.repository }}/helm-charts
           tag: ${{ github.ref_name }}
           path: charts/s3-operator # Default charts/{name}
           registry: ghcr.io
@@ -71,9 +67,12 @@ jobs:
           registry_password: ${{ secrets.GITHUB_TOKEN }}
 
   release:
-    needs: build-push-docker
+    needs: build-push-operator
     name: release
     runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
+      - uses: actions/checkout@v3
       - name: release
         run: gh release create ${{ github.ref_name }} --generate-notes --verify-tag
