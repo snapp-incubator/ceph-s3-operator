@@ -2,7 +2,7 @@
 
 ![License](https://img.shields.io/github/license/snapp-incubator/s3-operator)
 ![Test](https://github.com/snapp-incubator/s3-operator/actions/workflows/checks.yaml/badge.svg?branch=main)
-![Release](https://github.com/snapp-incubator/s3-operator/actions/workflows/build.yaml/badge.svg)
+![Release](https://github.com/snapp-incubator/s3-operator/actions/workflows/build-release.yaml/badge.svg)
 ![Tag](https://img.shields.io/github/v/tag/snapp-incubator/s3-operator?&logo=git)
 
 ## Introduction
