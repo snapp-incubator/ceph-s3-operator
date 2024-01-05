@@ -9,7 +9,7 @@ plugins:
   manifests.sdk.operatorframework.io/v2: {}
   scorecard.sdk.operatorframework.io/v2: {}
 projectName: s3-operator
-repo: github.com/snapp-incubator/s3-operator
+repo: github.com/snapp-cab/ceph-s3-operator
 resources:
 - api:
     crdVersion: v1
@@ -18,7 +18,7 @@ resources:
   domain: snappcloud.io
   group: s3
   kind: S3UserClaim
-  path: github.com/snapp-incubator/s3-operator/api/v1alpha1
+  path: github.com/snapp-cab/ceph-s3-operator/api/v1alpha1
   version: v1alpha1
   webhooks:
     validation: true
@@ -29,7 +29,7 @@ resources:
   domain: snappcloud.io
   group: s3
   kind: S3User
-  path: github.com/snapp-incubator/s3-operator/api/v1alpha1
+  path: github.com/snapp-cab/ceph-s3-operator/api/v1alpha1
   version: v1alpha1
 - api:
     crdVersion: v1
@@ -38,7 +38,7 @@ resources:
   domain: snappcloud.io
   group: s3
   kind: S3Bucket
-  path: github.com/snapp-incubator/s3-operator/api/v1alpha1
+  path: github.com/snapp-cab/ceph-s3-operator/api/v1alpha1
   version: v1alpha1
   webhooks:
     validation: true

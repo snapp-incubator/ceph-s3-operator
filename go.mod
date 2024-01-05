@@ -1,4 +1,4 @@
-module github.com/snapp-incubator/s3-operator
+module github.com/snapp-cab/ceph-s3-operator
 
 go 1.20
 

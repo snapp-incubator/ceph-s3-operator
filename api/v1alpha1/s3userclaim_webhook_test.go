@@ -14,7 +14,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
-	"github.com/snapp-incubator/s3-operator/pkg/consts"
+	"github.com/snapp-cab/ceph-s3-operator/pkg/consts"
 )
 
 var _ = Describe("", Ordered, ContinueOnFailure, func() {

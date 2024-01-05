@@ -20,8 +20,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	s3v1alpha1 "github.com/snapp-incubator/s3-operator/api/v1alpha1"
-	"github.com/snapp-incubator/s3-operator/pkg/consts"
+	s3v1alpha1 "github.com/snapp-cab/ceph-s3-operator/api/v1alpha1"
+	"github.com/snapp-cab/ceph-s3-operator/pkg/consts"
 )
 
 // Provision provisions the required resources for the s3UserClaim object

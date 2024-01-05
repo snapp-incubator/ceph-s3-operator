@@ -1,8 +1,8 @@
 # S3 Operator
 
 ![License](https://img.shields.io/github/license/snapp-incubator/s3-operator)
-![Test](https://github.com/snapp-incubator/s3-operator/actions/workflows/checks.yaml/badge.svg?branch=main)
-![Release](https://github.com/snapp-incubator/s3-operator/actions/workflows/build-release.yaml/badge.svg)
+![Test](https://github.com/snapp-cab/ceph-s3-operator/actions/workflows/checks.yaml/badge.svg?branch=main)
+![Release](https://github.com/snapp-cab/ceph-s3-operator/actions/workflows/build-release.yaml/badge.svg)
 ![Tag](https://img.shields.io/github/v/tag/snapp-incubator/s3-operator?&logo=git)
 
 ## Introduction
@@ -82,7 +82,7 @@ All the operator releases are bundled and pushed to the [Snappcloud hub](https:/
 ## Usage and Documentation
 
 - CRD Examples: Located in the [samples](config/samples) folder.
-- Detailed Documentation: Available on the [wiki](https://github.com/snapp-incubator/s3-operator/wiki).
+- Detailed Documentation: Available on the [wiki](https://github.com/snapp-cab/ceph-s3-operator/wiki).
 - Design and Decision Insights: Refer to our [design doc](docs/DESIGN.md) for an in-depth understanding.
 
 ## Versioning and Release
@@ -159,4 +159,4 @@ Contributions are warmly welcomed. Feel free to submit issues or pull requests.
 
 ## License
 
-This project is licensed under the [Apache License 2.0](https://github.com/snapp-incubator/s3-operator/blob/main/LICENSE).
+This project is licensed under the [Apache License 2.0](https://github.com/snapp-cab/ceph-s3-operator/blob/main/LICENSE).

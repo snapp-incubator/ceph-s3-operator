@@ -8,7 +8,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	"github.com/snapp-incubator/s3-operator/pkg/consts"
+	"github.com/snapp-cab/ceph-s3-operator/pkg/consts"
 )
 
 func CalculateNamespaceUsedQuota(ctx context.Context, uncachedReader client.Reader,
