@@ -1,24 +1,24 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "s3-operator.fullname" . }}-controller-manager
+  name: {{ include "ceph-s3-operator.fullname" . }}-controller-manager
   labels:
     app.kubernetes.io/component: manager
-    app.kubernetes.io/created-by: s3-operator
-    app.kubernetes.io/part-of: s3-operator
+    app.kubernetes.io/created-by: ceph-s3-operator
+    app.kubernetes.io/part-of: ceph-s3-operator
     control-plane: controller-manager
-  {{- include "s3-operator.labels" . | nindent 4 }}
+  {{- include "ceph-s3-operator.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.controllerManager.replicas }}
   selector:
     matchLabels:
       control-plane: controller-manager
-    {{- include "s3-operator.selectorLabels" . | nindent 6 }}
+    {{- include "ceph-s3-operator.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
         control-plane: controller-manager
-      {{- include "s3-operator.selectorLabels" . | nindent 8 }}
+      {{- include "ceph-s3-operator.selectorLabels" . | nindent 8 }}
       annotations:
         kubectl.kubernetes.io/default-container: manager
     spec:
@@ -87,11 +87,11 @@ spec:
         - mountPath: /tmp/k8s-webhook-server/serving-certs
           name: cert
           readOnly: true
-        - mountPath: /s3-operator/config/
+        - mountPath: /ceph-s3-operator/config/
           name: config
       securityContext:
         runAsNonRoot: true
-      serviceAccountName: {{ include "s3-operator.fullname" . }}-controller-manager
+      serviceAccountName: {{ include "ceph-s3-operator.fullname" . }}-controller-manager
       terminationGracePeriodSeconds: 10
       volumes:
       - name: cert
@@ -103,4 +103,4 @@ spec:
           items:
           - key: config.yaml
             path: config.yaml
-          secretName: {{ include "s3-operator.fullname" . }}-controller-manager-config
+          secretName: {{ include "ceph-s3-operator.fullname" . }}-controller-manager-config

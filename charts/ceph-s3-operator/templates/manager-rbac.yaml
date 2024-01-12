@@ -1,9 +1,9 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: {{ include "s3-operator.fullname" . }}-manager-role
+  name: {{ include "ceph-s3-operator.fullname" . }}-manager-role
   labels:
-  {{- include "s3-operator.labels" . | nindent 4 }}
+  {{- include "ceph-s3-operator.labels" . | nindent 4 }}
 rules:
 - apiGroups:
   - ""
@@ -131,17 +131,17 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: {{ include "s3-operator.fullname" . }}-manager-rolebinding
+  name: {{ include "ceph-s3-operator.fullname" . }}-manager-rolebinding
   labels:
     app.kubernetes.io/component: rbac
-    app.kubernetes.io/created-by: s3-operator
-    app.kubernetes.io/part-of: s3-operator
-  {{- include "s3-operator.labels" . | nindent 4 }}
+    app.kubernetes.io/created-by: ceph-s3-operator
+    app.kubernetes.io/part-of: ceph-s3-operator
+  {{- include "ceph-s3-operator.labels" . | nindent 4 }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: '{{ include "s3-operator.fullname" . }}-manager-role'
+  name: '{{ include "ceph-s3-operator.fullname" . }}-manager-role'
 subjects:
 - kind: ServiceAccount
-  name: '{{ include "s3-operator.fullname" . }}-controller-manager'
+  name: '{{ include "ceph-s3-operator.fullname" . }}-controller-manager'
   namespace: '{{ .Release.Namespace }}'

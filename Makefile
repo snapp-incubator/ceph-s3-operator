@@ -324,4 +324,4 @@ $(HELMIFY): $(LOCALBIN)
 	test -s $(LOCALBIN)/helmify || GOBIN=$(LOCALBIN) go install github.com/arttor/helmify/cmd/helmify@v0.4.5
 
 helm: manifests kustomize helmify
-	$(KUSTOMIZE) build config/default | $(HELMIFY) deploy/charts/ceph-s3-operator
+	$(KUSTOMIZE) build config/default | $(HELMIFY) charts/ceph-s3-operator

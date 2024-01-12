@@ -5,7 +5,7 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.11.1
   labels:
-  {{- include "s3-operator.labels" . | nindent 4 }}
+  {{- include "ceph-s3-operator.labels" . | nindent 4 }}
 spec:
   group: s3.snappcloud.io
   names:

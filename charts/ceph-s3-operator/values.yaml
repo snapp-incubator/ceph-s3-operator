@@ -22,7 +22,7 @@ controllerManager:
         memory: 64Mi
   manager:
     args:
-    - --config=/s3-operator/config/config.yaml
+    - --config=/ceph-s3-operator/config/config.yaml
     - --health-probe-bind-address=:8081
     - --metrics-bind-address=127.0.0.1:8080
     - --leader-elect
@@ -32,7 +32,7 @@ controllerManager:
         drop:
         - ALL
     image:
-      repository: ghcr.io/snapp-incubator/s3-operator
+      repository: ghcr.io/snapp-incubator/ceph-s3-operator
       tag: latest
     resources:
       limits:
