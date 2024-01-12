@@ -287,12 +287,12 @@ catalog-push: ## Push a catalog image.
 
 .PHONY: build-testing-image
 build-testing-image:
-	docker build -t docker.io/spc35771/ceph-s3-operator-testing:$(TESTING_IMAGE_TAG) testing/
+	docker build -t docker.io/spc35771/s3-operator-testing:$(TESTING_IMAGE_TAG) testing/
 
 .PHONY: setup-dev-env
 setup-dev-env:
 	-docker network create test_ceph_net
-	-docker run -p 8000:80 --rm -d --name test_ceph_a --hostname test_ceph_a --net test_ceph_net docker.io/spc35771/ceph-s3-operator-testing:$(TESTING_IMAGE_TAG)
+	-docker run -p 8000:80 --rm -d --name test_ceph_a --hostname test_ceph_a --net test_ceph_net docker.io/spc35771/s3-operator-testing:$(TESTING_IMAGE_TAG)
 	for i in {1..10}; do \
   		if docker logs --tail 2 test_ceph_a | grep "run sleep to keep container up" > /dev/null; then \
   		  break; \
