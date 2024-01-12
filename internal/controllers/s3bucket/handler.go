@@ -17,10 +17,10 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 
-	s3v1alpha1 "github.com/snapp-cab/ceph-s3-operator/api/v1alpha1"
-	"github.com/snapp-cab/ceph-s3-operator/internal/config"
-	"github.com/snapp-cab/ceph-s3-operator/internal/s3_agent"
-	"github.com/snapp-cab/ceph-s3-operator/pkg/consts"
+	s3v1alpha1 "github.com/snapp-incubator/ceph-s3-operator/api/v1alpha1"
+	"github.com/snapp-incubator/ceph-s3-operator/internal/config"
+	"github.com/snapp-incubator/ceph-s3-operator/internal/s3_agent"
+	"github.com/snapp-incubator/ceph-s3-operator/pkg/consts"
 )
 
 // S3BucketReconciler reconciles a S3Bucket object

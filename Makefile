@@ -180,7 +180,7 @@ uninstall: manifests kustomize ## Uninstall CRDs from the K8s cluster specified 
 
 .PHONY: deploy
 deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in ~/.kube/config.
-	cd config/manager && $(KUSTOMIZE) edit set image ghcr.io/snapp-cab/ceph-s3-operator=${IMG}
+	cd config/manager && $(KUSTOMIZE) edit set image ghcr.io/snapp-incubator/ceph-s3-operator=${IMG}
 	$(KUSTOMIZE) build config/default | kubectl apply -f -
 
 .PHONY: undeploy
@@ -189,7 +189,7 @@ undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/confi
 
 .PHONY: deploy-for-e2e-test
 deploy-for-e2e-test: manifests kustomize ## Deploy controller to the K8s cluster specified in ~/.kube/config customized for e2e tests.
-	cd config/manager && $(KUSTOMIZE) edit set image ghcr.io/snapp-cab/ceph-s3-operator=${IMG}
+	cd config/manager && $(KUSTOMIZE) edit set image ghcr.io/snapp-incubator/ceph-s3-operator=${IMG}
 	$(KUSTOMIZE) build config/test | kubectl apply -f -
 
 ##@ Build Dependencies
@@ -232,7 +232,7 @@ $(ENVTEST): $(LOCALBIN)
 .PHONY: bundle
 bundle: manifests kustomize ## Generate bundle manifests and metadata, then validate generated files.
 	operator-sdk generate kustomize manifests -q
-	cd config/manager && $(KUSTOMIZE) edit set image ghcr.io/snapp-cab/ceph-s3-operator=$(IMG)
+	cd config/manager && $(KUSTOMIZE) edit set image ghcr.io/snapp-incubator/ceph-s3-operator=$(IMG)
 	$(KUSTOMIZE) build config/manifests | operator-sdk generate bundle $(BUNDLE_GEN_FLAGS)
 	operator-sdk bundle validate ./bundle
 

@@ -1,9 +1,9 @@
 # S3 Operator
 
-![License](https://img.shields.io/github/license/snapp-cab/ceph-s3-operator)
-![Test](https://github.com/snapp-cab/ceph-s3-operator/actions/workflows/checks.yaml/badge.svg?branch=main)
-![Release](https://github.com/snapp-cab/ceph-s3-operator/actions/workflows/build-release.yaml/badge.svg)
-![Tag](https://img.shields.io/github/v/tag/snapp-cab/ceph-s3-operator?&logo=git)
+![License](https://img.shields.io/github/license/snapp-incubator/ceph-s3-operator)
+![Test](https://github.com/snapp-incubator/ceph-s3-operator/actions/workflows/checks.yaml/badge.svg?branch=main)
+![Release](https://github.com/snapp-incubator/ceph-s3-operator/actions/workflows/build-release.yaml/badge.svg)
+![Tag](https://img.shields.io/github/v/tag/snapp-incubator/ceph-s3-operator?&logo=git)
 
 ## Introduction
 
@@ -35,14 +35,14 @@ make deploy
 Deploy using Helm (version 3.8.0 or later), which supports OCI charts. To use the helm chart, edit the `values.yaml` file and set `controllerManagerConfig.configYaml` to your Ceph cluster configuration like [secret.yaml](config/manager/secret.yaml).
 
 ```bash
-helm upgrade --install ceph-s3-operator oci://ghcr.io/snapp-cab/ceph-s3-operator/helm-charts/ceph-s3-operator --version v0.3.5
+helm upgrade --install ceph-s3-operator oci://ghcr.io/snapp-incubator/ceph-s3-operator/helm-charts/ceph-s3-operator --version v0.3.5
 ```
 
 ### Using OLM
 
-All the operator releases are bundled and pushed to the [Snappcloud hub](https://github.com/snapp-cab/snappcloud-hub) which is a hub for the catalog sources. Install using Operator Lifecycle Manager (OLM) by following these steps:
+All the operator releases are bundled and pushed to the [Snappcloud hub](https://github.com/snapp-incubator/snappcloud-hub) which is a hub for the catalog sources. Install using Operator Lifecycle Manager (OLM) by following these steps:
 
-1. Install [snappcloud hub catalog-source](https://github.com/snapp-cab/snappcloud-hub/blob/main/catalog-source.yml)
+1. Install [snappcloud hub catalog-source](https://github.com/snapp-incubator/snappcloud-hub/blob/main/catalog-source.yml)
 
 2. Override the `ceph-s3-operator-controller-manager-config-override` with your operator configuration.
 3. Apply the subscription manifest as shown below:
@@ -82,7 +82,7 @@ All the operator releases are bundled and pushed to the [Snappcloud hub](https:/
 ## Usage and Documentation
 
 - CRD Examples: Located in the [samples](config/samples) folder.
-- Detailed Documentation: Available on the [wiki](https://github.com/snapp-cab/ceph-s3-operator/wiki).
+- Detailed Documentation: Available on the [wiki](https://github.com/snapp-incubator/ceph-s3-operator/wiki).
 - Design and Decision Insights: Refer to our [design doc](docs/DESIGN.md) for an in-depth understanding.
 
 ## Versioning and Release
@@ -159,4 +159,4 @@ Contributions are warmly welcomed. Feel free to submit issues or pull requests.
 
 ## License
 
-This project is licensed under the [Apache License 2.0](https://github.com/snapp-cab/ceph-s3-operator/blob/main/LICENSE).
+This project is licensed under the [Apache License 2.0](https://github.com/snapp-incubator/ceph-s3-operator/blob/main/LICENSE).

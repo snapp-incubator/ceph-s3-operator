@@ -12,7 +12,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 
-	"github.com/snapp-cab/ceph-s3-operator/pkg/consts"
+	"github.com/snapp-incubator/ceph-s3-operator/pkg/consts"
 )
 
 // S3Agent wraps the s3.S3 structure to allow for wrapper methods

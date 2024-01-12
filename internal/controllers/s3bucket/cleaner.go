@@ -9,7 +9,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	"github.com/snapp-cab/ceph-s3-operator/pkg/consts"
+	"github.com/snapp-incubator/ceph-s3-operator/pkg/consts"
 )
 
 // Cleanup cleans up the provisioned resources for the s3Bucket object

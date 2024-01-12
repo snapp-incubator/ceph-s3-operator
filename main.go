@@ -34,10 +34,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	s3v1alpha1 "github.com/snapp-cab/ceph-s3-operator/api/v1alpha1"
-	"github.com/snapp-cab/ceph-s3-operator/internal/config"
-	"github.com/snapp-cab/ceph-s3-operator/internal/controllers/s3bucket"
-	"github.com/snapp-cab/ceph-s3-operator/internal/controllers/s3userclaim"
+	s3v1alpha1 "github.com/snapp-incubator/ceph-s3-operator/api/v1alpha1"
+	"github.com/snapp-incubator/ceph-s3-operator/internal/config"
+	"github.com/snapp-incubator/ceph-s3-operator/internal/controllers/s3bucket"
+	"github.com/snapp-incubator/ceph-s3-operator/internal/controllers/s3userclaim"
 	//+kubebuilder:scaffold:imports
 )
 

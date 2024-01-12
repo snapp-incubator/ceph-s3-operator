@@ -33,8 +33,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/manager"
 
-	s3v1alpha1 "github.com/snapp-cab/ceph-s3-operator/api/v1alpha1"
-	"github.com/snapp-cab/ceph-s3-operator/internal/config"
+	s3v1alpha1 "github.com/snapp-incubator/ceph-s3-operator/api/v1alpha1"
+	"github.com/snapp-incubator/ceph-s3-operator/internal/config"
 )
 
 type Reconciler struct {

@@ -40,7 +40,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	"github.com/snapp-cab/ceph-s3-operator/internal/config"
+	"github.com/snapp-incubator/ceph-s3-operator/internal/config"
 )
 
 // These tests use Ginkgo (BDD-style Go testing framework). Refer to
