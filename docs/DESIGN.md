@@ -1,4 +1,4 @@
-# S3 Operator Design
+# Ceph S3 Operator Design
 
 ## Decisions:
 
