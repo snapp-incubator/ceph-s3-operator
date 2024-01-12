@@ -6,8 +6,8 @@ metadata:
     app.kubernetes.io/name: namespace
     app.kubernetes.io/instance: system
     app.kubernetes.io/component: manager
-    app.kubernetes.io/created-by: s3-operator
-    app.kubernetes.io/part-of: s3-operator
+    app.kubernetes.io/created-by: ceph-s3-operator
+    app.kubernetes.io/part-of: ceph-s3-operator
     app.kubernetes.io/managed-by: kustomize
   name: system
 ---
@@ -21,8 +21,8 @@ metadata:
     app.kubernetes.io/name: deployment
     app.kubernetes.io/instance: controller-manager
     app.kubernetes.io/component: manager
-    app.kubernetes.io/created-by: s3-operator
-    app.kubernetes.io/part-of: s3-operator
+    app.kubernetes.io/created-by: ceph-s3-operator
+    app.kubernetes.io/part-of: ceph-s3-operator
     app.kubernetes.io/managed-by: kustomize
 spec:
   selector:
@@ -69,12 +69,12 @@ spec:
       - command:
         - /manager
         args:
-        - --config=/s3-operator/config/config.yaml
+        - --config=/ceph-s3-operator/config/config.yaml
         - --leader-elect
         volumeMounts:
-          - mountPath: /s3-operator/config/
+          - mountPath: /ceph-s3-operator/config/
             name: config
-        image: ghcr.io/snapp-incubator/s3-operator:latest
+        image: ghcr.io/snapp-cab/ceph-s3-operator:latest
         name: manager
         securityContext:
           allowPrivilegeEscalation: false

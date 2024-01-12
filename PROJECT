@@ -8,7 +8,7 @@ layout:
 plugins:
   manifests.sdk.operatorframework.io/v2: {}
   scorecard.sdk.operatorframework.io/v2: {}
-projectName: s3-operator
+projectName: ceph-s3-operator
 repo: github.com/snapp-cab/ceph-s3-operator
 resources:
 - api:

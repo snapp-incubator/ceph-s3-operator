@@ -6,8 +6,8 @@ metadata:
     app.kubernetes.io/name: clusterrole
     app.kubernetes.io/instance: s3userclaim-editor-role
     app.kubernetes.io/component: rbac
-    app.kubernetes.io/created-by: s3-operator
-    app.kubernetes.io/part-of: s3-operator
+    app.kubernetes.io/created-by: ceph-s3-operator
+    app.kubernetes.io/part-of: ceph-s3-operator
     app.kubernetes.io/managed-by: kustomize
   name: s3userclaim-editor-role
 rules:

@@ -4,9 +4,9 @@ metadata:
   labels:
     app.kubernetes.io/name: s3user
     app.kubernetes.io/instance: s3user-sample
-    app.kubernetes.io/part-of: s3-operator
+    app.kubernetes.io/part-of: ceph-s3-operator
     app.kubernetes.io/managed-by: kustomize
-    app.kubernetes.io/created-by: s3-operator
+    app.kubernetes.io/created-by: ceph-s3-operator
   name: s3user-sample
 spec:
   # TODO(user): Add fields here

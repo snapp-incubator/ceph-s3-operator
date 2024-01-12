@@ -7,13 +7,13 @@ commands:
     ignoreFailure: true
   - command: kubectl create namespace s3-test2
     ignoreFailure: true
-  # Create namespace s3-operator-system
-  - command: kubectl create namespace s3-operator-system
+  # Create namespace ceph-s3-operator-system
+  - command: kubectl create namespace ceph-s3-operator-system
     ignoreFailure: true
   # Setup local ceph cluster
-  - command: kubectl apply -f ./ceph-manifest -n s3-operator-system
+  - command: kubectl apply -f ./ceph-manifest -n ceph-s3-operator-system
   # Setup the operator
-  - command: make -C ../../ deploy-for-e2e-test IMG=s3-operator:latest
+  - command: make -C ../../ deploy-for-e2e-test IMG=ceph-s3-operator:latest
   # The namespace should have the team label for the cluster resource quota
   - command: kubectl label namespace s3-test snappcloud.io/team=myteam
   - command: kubectl label namespace s3-test2 snappcloud.io/team=myteam

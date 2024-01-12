@@ -4,7 +4,7 @@ metadata:
   annotations:
     alm-examples: '[]'
     capabilities: Basic Install
-  name: s3-operator.v0.0.0
+  name: ceph-s3-operator.v0.0.0
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
@@ -37,7 +37,7 @@ spec:
 
     ## Documentation
 
-    For detailed information, consult the [user-doc](https://docs.snappcloud.io/docs/storage/object-store/s3-operator), the [Readme](https://github.com/snapp-cab/ceph-s3-operator#readme) in the main branch, and the [design details](https://github.com/snapp-cab/ceph-s3-operator/blob/main/docs/DESIGN.md).
+    For detailed information, consult the [user-doc](https://docs.snappcloud.io/docs/storage/object-store/ceph-s3-operator), the [Readme](https://github.com/snapp-cab/ceph-s3-operator#readme) in the main branch, and the [design details](https://github.com/snapp-cab/ceph-s3-operator/blob/main/docs/DESIGN.md).
 
     ## Contribution
 
@@ -68,11 +68,11 @@ spec:
   - ceph
   links:
   - name: User Documentation
-    url: https://docs.snappcloud.io/docs/storage/object-store/s3-operator
+    url: https://docs.snappcloud.io/docs/storage/object-store/ceph-s3-operator
   - name: Github Repository
     url: https://github.com/snapp-cab/ceph-s3-operator
   maturity: alpha
   provider:
     name: Snappcloud
-    url: https://github.com/snapp-incubator
+    url: https://github.com/snapp-cab
   version: 0.0.0

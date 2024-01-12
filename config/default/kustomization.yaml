@@ -1,12 +1,12 @@
 # Adds namespace to all resources.
-namespace: s3-operator-system
+namespace: ceph-s3-operator-system
 
 # Value of this field is prepended to the
 # names of all resources, e.g. a deployment named
 # "wordpress" becomes "alices-wordpress".
 # Note that it should also match with the prefix (text before '-') of the namespace
 # field above.
-namePrefix: s3-operator-
+namePrefix: ceph-s3-operator-
 
 # Labels to add to all resources and selectors.
 #commonLabels:

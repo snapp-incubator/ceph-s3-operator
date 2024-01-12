@@ -4,9 +4,9 @@ metadata:
   labels:
     app.kubernetes.io/name: s3bucket
     app.kubernetes.io/instance: s3bucket-sample
-    app.kubernetes.io/part-of: s3-operator
+    app.kubernetes.io/part-of: ceph-s3-operator
     app.kubernetes.io/managed-by: kustomize
-    app.kubernetes.io/created-by: s3-operator
+    app.kubernetes.io/created-by: ceph-s3-operator
   name: s3bucket-sample
 spec:
   s3UserRef: s3userclaim-sample

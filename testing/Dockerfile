@@ -29,8 +29,8 @@ ENV GO111MODULE=on
 ENV GOPATH /go
 ENV GODEBUG=cgocheck=2
 ENV GOCACHE=/go/cache
-WORKDIR /opt/s3-operator
-VOLUME /opt/s3-operator
+WORKDIR /opt/ceph-s3-operator
+VOLUME /opt/ceph-s3-operator
 
 COPY micro-osd.sh /
 COPY entrypoint.sh /
