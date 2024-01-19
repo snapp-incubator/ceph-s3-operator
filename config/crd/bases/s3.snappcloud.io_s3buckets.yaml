@@ -24,7 +24,7 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: S3Bucket is the Schema for the s3buckets API
+        description: S3 Bucket Instance
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
