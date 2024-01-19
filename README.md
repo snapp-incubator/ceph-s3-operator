@@ -35,7 +35,7 @@ make deploy
 Deploy using Helm (version 3.8.0 or later), which supports OCI charts. To use the helm chart, edit the `values.yaml` file and set `controllerManagerConfig.configYaml` to your Ceph cluster configuration like [secret.yaml](config/manager/secret.yaml).
 
 ```bash
-helm upgrade --install ceph-s3-operator oci://ghcr.io/snapp-incubator/ceph-s3-operator/helm-charts/ceph-s3-operator --version v0.3.5
+helm upgrade --install ceph-s3-operator oci://ghcr.io/snapp-incubator/ceph-s3-operator/helm-charts/ceph-s3-operator --version v0.3.6
 ```
 
 ### Using OLM
@@ -159,4 +159,4 @@ Contributions are warmly welcomed. Feel free to submit issues or pull requests.
 
 ## License
 
-This project is licensed under the [Apache License 2.0](https://github.com/snapp-incubator/ceph-s3-operator/blob/main/LICENSE).
+This project is licensed under the [GPL 3.0](https://github.com/snapp-incubator/ceph-s3-operator/blob/main/LICENSE).
