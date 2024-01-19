@@ -5,7 +5,8 @@ metadata:
     alm-examples: '[]'
     capabilities: Basic Install
     categories: Storage
-    description: 'Provision and manage S3 users and buckets in S3 object storage created with Ceph RGW on Kubernetes and OpenShift.'
+    description: Provision and manage users and buckets in S3 object storage created
+      with Ceph RGW on Kubernetes and OpenShift.
     repository: https://github.com/snapp-incubator/ceph-s3-operator
     support: Snappcloud
   name: ceph-s3-operator.v0.0.0
@@ -24,8 +25,8 @@ spec:
       kind: S3UserClaim
       name: s3userclaims.s3.snappcloud.io
       version: v1alpha1
-    - description: S3 User is created by the S3 User Claim instance. It's applicable
-        for the the operator user.
+    - description: S3 User is created by the S3 User Claim instance. It's not applicable
+        for the operator user.
       displayName: S3 User
       kind: S3User
       name: s3users.s3.snappcloud.io
@@ -46,23 +47,23 @@ spec:
 
     ## Usage and Documentation
 
-    - CRD Examples: Located in the [samples](config/samples) folder.
+    - CRD Examples: Located in the [samples](https://github.com/snapp-incubator/ceph-s3-operator/tree/main/config/samples) folder.
     - Detailed Documentation: Available on the [wiki](https://github.com/snapp-incubator/ceph-s3-operator/wiki).
-    - Design and Decision Insights: Refer to our [design doc](docs/DESIGN.md) for an in-depth understanding.
+    - Design and Decision Insights: Refer to our [design doc](https://github.com/snapp-incubator/ceph-s3-operator/blob/main/docs/DESIGN.md) for an in-depth understanding.
   displayName: Ceph S3 Operator
   icon:
-  - base64data: iVBORw0KGgoAAAANSUhEUgAAAFAAAAAoCAMAAABevo0zAAABFFBMVEVHcEwBGUDs/v8JEzPw//8ABysAFDzs///u//8ABCgHIEYOGzoYO1MaIT8gRlkRMk4uZHE/RF0wN1LQ4+dk18dOp6MAACIpXGzR/PpImplXwrjd8PLH2+EvRWMQKkpj0cIQJ0IFDi83dX0ZLE/V6Ozk9/gdMlYJKElBjI9le5BezL89TWofTGFKY3lXboSSprW2ydM2eoNQraeds78iU2U7gIVRV23Bw8sjOFtWtq+Knq91iZxCk5Qwbnl+l6PGy9KJjJvp/P1BV3Qza3Svsbt8f5ChpbBtcIKTmKaAhpRhZXi7vcVPwLmwu8N6kaFIoZ/Y/fuovMd2eIlppajH8PBcu7K85+OQ2dKJ29Ruwb2e1NKaxMYjpOsOAAAAAXRSTlMAQObYZgAAAxhJREFUSMfV1seS20YQBmCCQA+nkQESwIIBAHPOOedMbpRkS37/9/DBrpIPW14R3IPdp8HlqxlUV/cfCAQCgUDo1goGg8Gfx79PgZ/lB/zHxyeA79ZngUE/IKWUftoNKReMhePxTDbE0U8A6TI+qiVy6fSgXGxnQvRusFFLMzxRrA7D88xgHKZ3gTQ2ThOxMBEnVkq1WimFDOrZO0AaXxFZlL+uZbdr2YoR6Qp5phijfkEaTxC1ZLMCOIa67gIreqlhhVQz1B9IM2Wm6doeoKTLqXVaQgT5a8kitew7TfgL4LJIppECi6Bf47VEuT7XkgBOq9RhRr5A+sJXSjaL2As/Pzx8+fLwHDsCgDOMKrk49fHkbJU3oh4CFp8f/qrndhIAZbdAisHbQdrgrYiKACAVZ7PZ42w2e9QRAZKFkph7tx0/AMfMU1RA0A8HDVHSdMD0YtcDQNFtMnXuZjC7ykcLgNL5uJ9r2vzbj5p0XuznGgLbMpji7U/ODIisAGp91jydrr9dLpfqFszFCQFEkayyt4JcPK2kBECpv2dR+G5Pp5eOCazEAoCT4hOxW0EaT1daHgCUz9eiPCldLpdKdXdeCAgotxQfYDhHPBZQ30q9mtw0oq0nudrTNlsEEDxSvhkMxRJ5Y42o9VkTqm+VaHf9JpnmfgeQLEyY6vJmMFjjhy0WhM3uuLnqid/fhHH/sJj3ELySzTze3odcnWm6MoK0P54ks/ZHWwDtdasBoBqx+IaPxg4PxJKdBDT1k4mH41U3pdckAgjDYf7dX/jhtBmTZkQFwHJf7831xU5/3bAAyW5EZep+hgMXTvCG2wFgt/1zD6VDf6MhgBqZMKuYvwH74ihDV00CCKyiWoLAIrBT9ymfa1CfO2XEK0Zk4iF6tjVNAUKyELHzTpv6XVLLkcM3o7Ioym63YwhWQUk1mXQ7eMdefkkQR7CfRENVuxU32iGk3Lhr0dPMOEecCl9JTR2xk2cGjxl6X3KgofBoleMJQxg+Vx2F748iIUqz4Ua7Xm83Mst/j2C/Huco5TiO+zDQ/WcT7P8N/BPhp5ZUR1rpKAAAAABJRU5ErkJggg==
+  - base64data: iVBORw0KGgoAAAANSUhEUgAAAFAAAAAoCAMAAABevo0zAAABaFBMVEVHcEwBBikABTMAABsAACAAACQAAifr//8BCCwCCi7q/v79//8CEzz////n+/v7///p/fwACzgACTYDFz8NGTgAABUJDzAADToTKkYjR18WMEvu//81bnny//8LIEYAAC5u7ddOpqL4//8AAA9cv7VHkZMqMExo28orXW1s4tAoVGViy78RJkJt69XK9PI+gIaOo6/a//8cPlUUHj17/+fY6uwWLFAZNlAMFDS80dZBiIza4eQxZXJv8NoeJEFNUWdl18dsf5OousQ5P1gEDTE6eYFjd4vt7++6xMuQlKHf//9Xs6xWW3F/kaJlaHxTraearLiPp7JPYnvi9vYhNlhW18tKnJtIWnV8gZE7SWacn6tj0cPW1toAASmwxMxQz8JbbYVv5dLNztPQ+Pa/6+pMs69e4NHK3OBxdYdWaoBftbCSsLiwsrtex7o2dH2Km6t19t6np7NZl510ipx5traV6eCU2NSi6eKkA5MiAAAAAXRSTlMAQObYZgAABRJJREFUSMell2dX20gUhiPNaJCEiiVZlnuRe8PGvYGbwDY2hoXQe01CS0/+/o4gm91z9sPK7P2ic1we335fv3nzb5v72wRWn2ff9da7q6tf86dlfd4n2P7x9htr9vvzNlb3DbsuvyQHTgKSxFX28mXRJ7CvBQo+3+aBFgjIiuTKJThFIQOk//yd6BFeBWRtYv1A0pSKN2okQqnd6Eku6lJIWelu68IrgDaPvq6Q2knrotSgOzmXPV51lZIRL6eRb+vir7BnANo87BYpuxuOYnoj44x/enImW0Q0XWqAqiJzedHGzga0eYQDUkqlSzlgR8ge96bsRy6KsifowsWuX5PWRdtMQHbOtydLrWQ25CQIhlJbd61xFFDGCYSpZDZS1eSPojALUBBXScl7kcxRFEPD6b7q9BbCkwlgDAa6I9l0VeNOzcpYBQp6T5ISF0kvoBmKmPJr9/1i7Oui3kYUw1D2u+CjU6pse1irQNaz/VaudrI5gL8ea+pXC4uLV4trC9v65TIyiZHgBkee46AtAgVxneRCSyGKphlwOHe98Muurn37wMBOuztZr6zUfTaLQM92hUxkOxmcPwOusosvtoaN3YIGjV/0ZtNO8oMuWASKm6QyXlqBDM0gAFbv8/k/TMvn7z+oADE0RkaCK6S/7LMI1PcCruRREacLLk8nlAqhGlbDYQjDxHRaNH8HtoIRhcyLFoHlCtlY2sUFhW1e5AcxRMU+Xz70EdUX+Xmxj4moeJR0BbZ0i8Aex92VEpBBjsEDYT8eUH1+7ef3n33H/NBBDAcErhUVKq0E3m5bBK5LXCaBI4Z9Pgbh8iB2fHV2drYTOmg6IDjgl7HvqOCqcf53FoFdycjQuGdQkX8fphlj+fqo0Cjc7LgJAsHiFHuIs2i3a8qpReBqoLC0gcxvjfj9GlTtZ2et3cTNjlOFxRgKmzzKHYxwXM8qkKymoyaQUPd5/vSLM3p7u3O7E8p8qc/zgzYuCo0y6V3rQBwyBZAZ8mGtNs1/q7p2bnZuzp7sd/lJ7MHMIXaeOuGUoUXgR4lzNTLIwF2zDCEIo7Q3tdQo3LrDAEJKf2+OeGrFqVkuyinHRXDbGFSMb4cBiF3/gI3bG/hlcUJBNcZPzEYcm20jWG/s3Etjf+YPR5d8vQi+ff9hR3m+ORrxlwSeyEwnPkNjP49ex4kYgtg/bj5gv4z6/TVuyf7hcXPkMEfSG4z4rY/ey3JomNUEADoAgYpXHxb2oAEIAgCCoQnH83Jo+mZbX25cTQdsD3D34Oo0D8MOdfgZOMwSP2WPKuSW5fX1vGA3gmOcLHP82mqteRne5/tqkR8B5mXBPkmc9QX71wmIQkykDvljfrAM6SF+NmsIV6SGT4Bi7tfZjhS+lw0KGTTVHr13qA4IJ/hpHqnaOJt2S5WyxzbLGe2SWusiGLJjJyFQmWgoVFWfC4LPaPCooGm9Wc7oHMvqW6SWiC89pnDODBTKZVLpDG0gimh1go9VadZDj6WIZ4/UCuPgpxSeGGd87MVyBCBnAUQ/hZyyvP7Mm00s+VZlSVkJoWranYl3VoodL73RSTprXo7EYklgZ5Zzc+Kmn5Q4FC1FqYi36j7KpErxx5Qsv07OPQvO8jmWbv5EjnOHouNWYCXnUmTS/0rB+SyJxfq5H8trReMKflmRT07ISrf5Wklshm3zieXNc5df0UiZUyoH3d72/xHtJlLwiKKtOextbvbqZd889u4//lb8CZ2u3ta/QUPvAAAAAElFTkSuQmCC
     mediatype: image/png
   install:
     spec:
       deployments: null
     strategy: ""
   installModes:
-  - supported: false
+  - supported: true
     type: OwnNamespace
-  - supported: false
+  - supported: true
     type: SingleNamespace
-  - supported: false
+  - supported: true
     type: MultiNamespace
   - supported: true
     type: AllNamespaces
@@ -73,10 +74,10 @@ spec:
   - name: Documentation
     url: https://github.com/snapp-incubator/ceph-s3-operator/wiki
   maintainers:
-  - email: hamed.karbasi@snapp.cab
-    name: Hamed Karbasi
+  - email: cloud-platform@snapp.cab
+    name: Snappcloud Platform Tea
   maturity: stable
-  minKubeVersion: 1.21.0
+  minKubeVersion: 1.23.0
   provider:
     name: Snappcloud
     url: https://github.com/snapp-incubator

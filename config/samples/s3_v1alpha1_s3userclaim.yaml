@@ -11,3 +11,6 @@ spec:
     maxSize: 1000
     maxObjects: 1000
     maxBuckets: 5
+  subusers:
+    - subuser1
+    - subuser2
