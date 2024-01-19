@@ -40,6 +40,8 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
+        description: S3 User is created by the S3 User Claim instance. It's not applicable
+          for the operator user.
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation

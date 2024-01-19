@@ -52,7 +52,7 @@ type S3BucketStatus struct {
 // +kubebuilder:printcolumn:name="S3USERREF",type=string,JSONPath=`.spec.s3UserRef`
 // +kubebuilder:resource:shortName=s3b
 
-// S3Bucket is the Schema for the s3buckets API
+// S3 Bucket Instance
 type S3Bucket struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

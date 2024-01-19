@@ -61,6 +61,7 @@ type S3UserClaimStatus struct {
 // +kubebuilder:printcolumn:name="AGE",type=date,JSONPath=`.metadata.creationTimestamp`
 // +kubebuilder:resource:shortName=s3u
 
+// S3 User Claim Instance
 type S3UserClaim struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`

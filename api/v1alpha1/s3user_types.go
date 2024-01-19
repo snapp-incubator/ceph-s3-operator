@@ -48,6 +48,7 @@ type S3UserStatus struct {
 // +kubebuilder:printcolumn:name="MAX BUCKETS",type=string,JSONPath=`.spec.quota.maxBuckets`
 // +kubebuilder:printcolumn:name="AGE",type=date,JSONPath=`.metadata.creationTimestamp`
 
+// S3 User is created by the S3 User Claim instance. It's not applicable for the operator user.
 type S3User struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
