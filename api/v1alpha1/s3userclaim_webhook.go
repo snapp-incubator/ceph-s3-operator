@@ -33,7 +33,7 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
-	"github.com/snapp-incubator/s3-operator/pkg/consts"
+	"github.com/snapp-incubator/ceph-s3-operator/pkg/consts"
 )
 
 const (

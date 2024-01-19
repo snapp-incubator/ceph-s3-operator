@@ -32,10 +32,10 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/tools/reference"
 
-	s3v1alpha1 "github.com/snapp-incubator/s3-operator/api/v1alpha1"
-	"github.com/snapp-incubator/s3-operator/internal/config"
-	"github.com/snapp-incubator/s3-operator/internal/s3_agent"
-	"github.com/snapp-incubator/s3-operator/pkg/consts"
+	s3v1alpha1 "github.com/snapp-incubator/ceph-s3-operator/api/v1alpha1"
+	"github.com/snapp-incubator/ceph-s3-operator/internal/config"
+	"github.com/snapp-incubator/ceph-s3-operator/internal/s3_agent"
+	"github.com/snapp-incubator/ceph-s3-operator/pkg/consts"
 )
 
 var _ = Describe("S3UserClaim Controller", func() {

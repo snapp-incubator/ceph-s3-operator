@@ -58,10 +58,10 @@ jobs:
       - name: Chart | Push
         uses: appany/helm-oci-chart-releaser@v0.3.0
         with:
-          name: s3-operator
+          name: ceph-s3-operator
           repository: ${{ github.repository }}/helm-charts
           tag: ${{ github.ref_name }}
-          path: charts/s3-operator # Default charts/{name}
+          path: charts/ceph-s3-operator # Default charts/{name}
           registry: ghcr.io
           registry_username:  ${{ github.repository_owner }}
           registry_password: ${{ secrets.GITHUB_TOKEN }}

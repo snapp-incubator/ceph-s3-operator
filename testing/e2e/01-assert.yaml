@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: ceph-cluster
-  namespace: s3-operator-system
+  namespace: ceph-s3-operator-system
 status:
   readyReplicas: 1
 
@@ -11,7 +11,7 @@ status:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: s3-operator-controller-manager
-  namespace: s3-operator-system
+  name: ceph-s3-operator-controller-manager
+  namespace: ceph-s3-operator-system
 status:
   readyReplicas: 1

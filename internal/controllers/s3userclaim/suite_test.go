@@ -35,8 +35,8 @@ import (
 	logf "sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	s3v1alpha1 "github.com/snapp-incubator/s3-operator/api/v1alpha1"
-	"github.com/snapp-incubator/s3-operator/internal/config"
+	s3v1alpha1 "github.com/snapp-incubator/ceph-s3-operator/api/v1alpha1"
+	"github.com/snapp-incubator/ceph-s3-operator/internal/config"
 	//+kubebuilder:scaffold:imports
 )
 

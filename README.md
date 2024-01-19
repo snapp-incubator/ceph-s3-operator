@@ -1,13 +1,13 @@
-# S3 Operator
+# Ceph S3 Operator
 
-![License](https://img.shields.io/github/license/snapp-incubator/s3-operator)
-![Test](https://github.com/snapp-incubator/s3-operator/actions/workflows/checks.yaml/badge.svg?branch=main)
-![Release](https://github.com/snapp-incubator/s3-operator/actions/workflows/build-release.yaml/badge.svg)
-![Tag](https://img.shields.io/github/v/tag/snapp-incubator/s3-operator?&logo=git)
+![License](https://img.shields.io/github/license/snapp-incubator/ceph-s3-operator)
+![Test](https://github.com/snapp-incubator/ceph-s3-operator/actions/workflows/checks.yaml/badge.svg?branch=main)
+![Release](https://github.com/snapp-incubator/ceph-s3-operator/actions/workflows/build-release.yaml/badge.svg)
+![Tag](https://img.shields.io/github/v/tag/snapp-incubator/ceph-s3-operator?&logo=git)
 
 ## Introduction
 
-The S3 Operator, an open-source endeavor, is crafted to streamline the management of S3 users and buckets within a Ceph cluster environment. It enhances efficiency and simplifies processes, rendering S3 usage on Ceph clusters more straightforward and user-friendly.
+The Ceph S3 Operator, an open-source endeavor, is crafted to streamline the management of S3 users and buckets within a Ceph cluster environment. It enhances efficiency and simplifies processes, rendering S3 usage on Ceph clusters more straightforward and user-friendly.
 
 ## Features
 
@@ -35,7 +35,7 @@ make deploy
 Deploy using Helm (version 3.8.0 or later), which supports OCI charts. To use the helm chart, edit the `values.yaml` file and set `controllerManagerConfig.configYaml` to your Ceph cluster configuration like [secret.yaml](config/manager/secret.yaml).
 
 ```bash
-helm upgrade --install s3-operator oci://ghcr.io/snapp-incubator/s3-operator/helm-charts/s3-operator --version v0.3.5
+helm upgrade --install ceph-s3-operator oci://ghcr.io/snapp-incubator/ceph-s3-operator/helm-charts/ceph-s3-operator --version v0.3.5
 ```
 
 ### Using OLM
@@ -44,19 +44,19 @@ All the operator releases are bundled and pushed to the [Snappcloud hub](https:/
 
 1. Install [snappcloud hub catalog-source](https://github.com/snapp-incubator/snappcloud-hub/blob/main/catalog-source.yml)
 
-2. Override the `s3-operator-controller-manager-config-override` with your operator configuration.
+2. Override the `ceph-s3-operator-controller-manager-config-override` with your operator configuration.
 3. Apply the subscription manifest as shown below:
 
     ```yaml
     apiVersion: operators.coreos.com/v1alpha1
     kind: Subscription
     metadata:
-    name: s3-operator
+    name: ceph-s3-operator
     namespace: operators
     spec:
     channel: stable-v0
     installPlanApproval: Automatic
-    name: s3-operator
+    name: ceph-s3-operator
     source: snappcloud-hub-catalog
     sourceNamespace: openshift-marketplace
     config:
@@ -73,16 +73,16 @@ All the operator releases are bundled and pushed to the [Snappcloud hub](https:/
             items:
             - key: config.yaml
             path: config.yaml
-            secretName: s3-operator-controller-manager-config-override
+            secretName: ceph-s3-operator-controller-manager-config-override
         volumeMounts:
-        - mountPath: /s3-operator/config/
+        - mountPath: /ceph-s3-operator/config/
         name: config
     ```
 
 ## Usage and Documentation
 
 - CRD Examples: Located in the [samples](config/samples) folder.
-- Detailed Documentation: Available on the [wiki](https://github.com/snapp-incubator/s3-operator/wiki).
+- Detailed Documentation: Available on the [wiki](https://github.com/snapp-incubator/ceph-s3-operator/wiki).
 - Design and Decision Insights: Refer to our [design doc](docs/DESIGN.md) for an in-depth understanding.
 
 ## Versioning and Release
@@ -114,7 +114,7 @@ the chart run:
 make helm
 ```
 
-The chart will be created/updated in `charts/s3-operator` path
+The chart will be created/updated in `charts/ceph-s3-operator` path
 
 ### Run locally
 
@@ -159,4 +159,4 @@ Contributions are warmly welcomed. Feel free to submit issues or pull requests.
 
 ## License
 
-This project is licensed under the [Apache License 2.0](https://github.com/snapp-incubator/s3-operator/blob/main/LICENSE).
+This project is licensed under the [Apache License 2.0](https://github.com/snapp-incubator/ceph-s3-operator/blob/main/LICENSE).

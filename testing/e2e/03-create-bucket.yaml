@@ -35,6 +35,6 @@ apiVersion: kuttl.dev/v1beta1
 kind: TestStep
 commands:
   # Forward the ceph-cluster port on the host
-  - command: kubectl port-forward -n s3-operator-system deployment/ceph-cluster 8000:80
+  - command: kubectl port-forward -n ceph-s3-operator-system deployment/ceph-cluster 8000:80
     background: true 
     skipLogOutput: true

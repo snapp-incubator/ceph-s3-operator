@@ -41,4 +41,4 @@ jobs:
           curl -L https://github.com/kudobuilder/kuttl/releases/download/v0.15.0/kubectl-kuttl_0.15.0_linux_x86_64 -o /usr/local/bin/kubectl-kuttl
           chmod +x /usr/local/bin/kubectl-kuttl
       - name: Run e2e test
-        run: make e2e-test IMG=s3-operator:latest
+        run: make e2e-test IMG=ceph-s3-operator:latest

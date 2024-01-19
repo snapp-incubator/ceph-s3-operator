@@ -8,4 +8,4 @@ testDirs:
 timeout: 240
 # Load the necessary container images as cache
 kindContainers:
-- s3-operator
+- ceph-s3-operator
