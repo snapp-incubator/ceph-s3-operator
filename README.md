@@ -22,6 +22,11 @@ The Ceph S3 Operator, an open-source endeavor, is crafted to streamline the mana
 
 ## Installation
 
+### Prerequisites
+
+- Kubernetes v1.23.0+
+- ClusterResourceQuota CRD: `kubectl apply -f config/external-crd`
+
 ### Using Makefile
 
 Deploy using a simple command:
