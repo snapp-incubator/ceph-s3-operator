@@ -85,7 +85,7 @@ func findTeam(ctx context.Context, runtimeClient client.Client, suc *S3UserClaim
 
 	team, ok := ns.ObjectMeta.Labels[consts.LabelTeam]
 	if !ok {
-		return "", fmt.Errorf("namespace %s doesn't have team label", ns.ObjectMeta.Name)
+		return "", fmt.Errorf("namespace %s doesn't have the team label: %s", ns.ObjectMeta.Name, consts.LabelTeam)
 	}
 
 	return team, nil

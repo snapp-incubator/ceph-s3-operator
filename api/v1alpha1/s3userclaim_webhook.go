@@ -152,8 +152,7 @@ func validateQuota(suc *S3UserClaim, allErrs field.ErrorList) field.ErrorList {
 	case err == consts.ErrExceededNamespaceQuota:
 		allErrs = append(allErrs, field.Forbidden(quotaFieldPath, err.Error()))
 	case err != nil:
-		s3userclaimlog.Error(err, "failed to validate against cluster quota")
-		allErrs = append(allErrs, field.InternalError(quotaFieldPath, fmt.Errorf(consts.ContactCloudTeamErrMessage)))
+		allErrs = append(allErrs, field.InternalError(quotaFieldPath, fmt.Errorf("failed to validate against cluster quota, %w", err)))
 	}
 
 	switch err := validateAgainstClusterQuota(ctx, suc); {
@@ -162,8 +161,7 @@ func validateQuota(suc *S3UserClaim, allErrs field.ErrorList) field.ErrorList {
 	case goerrors.Is(err, consts.ErrClusterQuotaNotDefined):
 		allErrs = append(allErrs, field.Forbidden(quotaFieldPath, err.Error()))
 	case err != nil:
-		s3userclaimlog.Error(err, "failed to validate against cluster quota")
-		allErrs = append(allErrs, field.InternalError(quotaFieldPath, fmt.Errorf(consts.ContactCloudTeamErrMessage)))
+		allErrs = append(allErrs, field.InternalError(quotaFieldPath, fmt.Errorf("failed to validate against cluster quota, %w", err)))
 	}
 	return allErrs
 }
