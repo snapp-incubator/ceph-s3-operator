@@ -26,7 +26,7 @@ The Ceph S3 Operator, an open-source endeavor, is crafted to streamline the mana
 
 - Kubernetes v1.23.0+
 - Ceph v14.2.10+
-    > Note: prior Ceph versions [don't support the subuser bucket policy](https://github.com/ceph/ceph/pull/33714). Nevertheless, other features are expected to work properly within those eariler releases.
+    > Note: prior Ceph versions [don't support the subuser bucket policy](https://github.com/ceph/ceph/pull/33714). Nevertheless, other features are expected to work properly within those earlier releases.
 - ClusterResourceQuota CRD: `kubectl apply -f config/external-crd`
 
 ### Using Makefile
