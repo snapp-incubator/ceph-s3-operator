@@ -22,6 +22,13 @@ The Ceph S3 Operator, an open-source endeavor, is crafted to streamline the mana
 
 ## Installation
 
+### Prerequisites
+
+- Kubernetes v1.23.0+
+- Ceph v14.2.10+
+    > Note: prior Ceph versions [don't support the subuser bucket policy](https://github.com/ceph/ceph/pull/33714). Nevertheless, other features are expected to work properly within those earlier releases.
+- ClusterResourceQuota CRD: `kubectl apply -f config/external-crd`
+
 ### Using Makefile
 
 Deploy using a simple command:
@@ -40,44 +47,7 @@ helm upgrade --install ceph-s3-operator oci://ghcr.io/snapp-incubator/ceph-s3-op
 
 ### Using OLM
 
-All the operator releases are bundled and pushed to the [Snappcloud hub](https://github.com/snapp-incubator/snappcloud-hub) which is a hub for the catalog sources. Install using Operator Lifecycle Manager (OLM) by following these steps:
-
-1. Install [snappcloud hub catalog-source](https://github.com/snapp-incubator/snappcloud-hub/blob/main/catalog-source.yml)
-
-2. Override the `ceph-s3-operator-controller-manager-config-override` with your operator configuration.
-3. Apply the subscription manifest as shown below:
-
-    ```yaml
-    apiVersion: operators.coreos.com/v1alpha1
-    kind: Subscription
-    metadata:
-    name: ceph-s3-operator
-    namespace: operators
-    spec:
-    channel: stable-v0
-    installPlanApproval: Automatic
-    name: ceph-s3-operator
-    source: snappcloud-hub-catalog
-    sourceNamespace: openshift-marketplace
-    config:
-        resources:
-        limits:
-            cpu: 2
-            memory: 2Gi
-        requests:
-            cpu: 1
-            memory: 1Gi
-        volumes:
-        - name: config
-        secret:
-            items:
-            - key: config.yaml
-            path: config.yaml
-            secretName: ceph-s3-operator-controller-manager-config-override
-        volumeMounts:
-        - mountPath: /ceph-s3-operator/config/
-        name: config
-    ```
+You can find the operator on [OperatorHub](https://operatorhub.io/operator/ceph-s3-operator) and install it using OLM.
 
 ## Usage and Documentation
 
