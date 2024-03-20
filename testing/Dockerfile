@@ -1,6 +1,6 @@
 # Source(with modifications): https://github.com/ceph/go-ceph/blob/master/testing/containers/ceph/Dockerfile
 ARG CEPH_IMG=quay.io/ceph/ceph
-ARG CEPH_TAG=v14.2.6
+ARG CEPH_TAG=v14.2.22
 FROM ${CEPH_IMG}:${CEPH_TAG}
 
 RUN true && \
