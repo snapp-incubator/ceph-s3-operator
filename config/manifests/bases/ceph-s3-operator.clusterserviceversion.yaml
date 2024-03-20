@@ -34,7 +34,7 @@ spec:
   description: |
     The Ceph S3 Operator, an open-source endeavor, is crafted to streamline the management of S3 users and buckets within a Ceph cluster environment. It enhances efficiency and simplifies processes, rendering S3 usage on Ceph clusters more straightforward and user-friendly.
 
-    ## Features
+    ### Features
 
     - S3 User Management
     - Bucket Management
@@ -45,9 +45,15 @@ spec:
     - E2E Testing
     - Helm Chart and OLM Support
 
-    ## Usage and Documentation
+    ### Prerequisites
 
-    > Note: The operator assesses S3 quotas concerning the cluster's resource quota, a process that is facilitated by assigning the team label `snappcloud.io/team=<YOUR_TEAM_NAME>` to the namespace where you plan to deploy the operator objects. Therefore, it is necessary to add this label to the namespace if it is not already present.
+    - Kubernetes v1.23.0+
+    - Ceph v14.2.10+: prior Ceph versions [don't support the subuser bucket policy](https://github.com/ceph/ceph/pull/33714). Nevertheless, other features are expected to work properly within those eariler releases.
+    - [ClusterResourceQuota](https://github.com/snapp-incubator/ceph-s3-operator/blob/main/config/external-crd/openshift-clusterresourcequota.yaml) CRD: `kubectl apply -f config/external-crd`
+
+    ### Usage and Documentation
+
+    Note: The operator assesses S3 quotas concerning the cluster's resource quota, a process that is facilitated by assigning the team label `snappcloud.io/team=<YOUR_TEAM_NAME>` to the namespace where you plan to deploy the operator objects. Therefore, it is necessary to add this label to the namespace if it is not already present.
 
     - CRD Examples: Located in the [samples](https://github.com/snapp-incubator/ceph-s3-operator/tree/main/config/samples) folder.
     - Detailed Documentation: Available on the [wiki](https://github.com/snapp-incubator/ceph-s3-operator/wiki).
