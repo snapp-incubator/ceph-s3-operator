@@ -29,6 +29,18 @@ The Ceph S3 Operator, an open-source endeavor, is crafted to streamline the mana
     > Note: prior Ceph versions [don't support the subuser bucket policy](https://github.com/ceph/ceph/pull/33714). Nevertheless, other features are expected to work properly within those earlier releases.
 - ClusterResourceQuota CRD: `kubectl apply -f config/external-crd`
 
+### Using OLM
+
+You can find the operator on [OperatorHub](https://operatorhub.io/operator/ceph-s3-operator) and install it using OLM.
+
+### Using Helm
+
+Deploy using Helm (version 3.8.0 or later), which supports OCI charts. To use the helm chart, edit the `values.yaml` file and set `controllerManagerConfig.configYaml` to your Ceph cluster configuration like [secret.yaml](config/manager/secret.yaml).
+
+```bash
+helm upgrade --install ceph-s3-operator oci://ghcr.io/snapp-incubator/ceph-s3-operator/helm-charts/ceph-s3-operator --version v0.3.7
+```
+
 ### Using Makefile
 
 Deploy using a simple command:
@@ -36,18 +48,6 @@ Deploy using a simple command:
 ```bash
 make deploy
 ```
-
-### Using Helm
-
-Deploy using Helm (version 3.8.0 or later), which supports OCI charts. To use the helm chart, edit the `values.yaml` file and set `controllerManagerConfig.configYaml` to your Ceph cluster configuration like [secret.yaml](config/manager/secret.yaml).
-
-```bash
-helm upgrade --install ceph-s3-operator oci://ghcr.io/snapp-incubator/ceph-s3-operator/helm-charts/ceph-s3-operator --version v0.3.6
-```
-
-### Using OLM
-
-You can find the operator on [OperatorHub](https://operatorhub.io/operator/ceph-s3-operator) and install it using OLM.
 
 ## Usage and Documentation
 
