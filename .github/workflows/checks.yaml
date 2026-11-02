@@ -27,6 +27,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+      # without this the job runs on the runner's default go, which panics
+      # controller-gen v0.11.1
+      - uses: actions/setup-go@v4
+        with:
+          go-version-file: go.mod
+          cache: false
       - name: run tests using make
         run: make test
 
@@ -36,6 +42,10 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         name: checkout code
+      - uses: actions/setup-go@v4
+        with:
+          go-version-file: go.mod
+          cache: false
       - name: Install kuttl
         run: |
           curl -L https://github.com/kudobuilder/kuttl/releases/download/v0.15.0/kubectl-kuttl_0.15.0_linux_x86_64 -o /usr/local/bin/kubectl-kuttl
